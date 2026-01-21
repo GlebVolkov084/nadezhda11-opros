@@ -24,57 +24,77 @@
         <h1 class="text-center">Результаты опроса ЖКХ</h1>
         <h3 class="text-center text-muted">Заднепровский район</h3>
         
-        <div class="row mt-4">
-            <div class="col-md-3">
-                <div class="card text-white bg-primary">
-                    <div class="card-body text-center">
-                        <h1 id="totalVotes">0</h1>
-                        <p>Всего голосов</p>
+        <!-- Индикатор загрузки -->
+        <div id="loading" class="text-center mt-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Загрузка...</span>
+            </div>
+            <p class="mt-2">Загрузка данных...</p>
+        </div>
+        
+        <!-- Основной контент (скрыт до загрузки) -->
+        <div id="content" style="display: none;">
+            <div class="row mt-4">
+                <div class="col-md-3">
+                    <div class="card text-white bg-primary">
+                        <div class="card-body text-center">
+                            <h1 id="totalVotes">0</h1>
+                            <p>Всего голосов</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-white bg-success">
+                        <div class="card-body text-center">
+                            <h1 id="uniqueAddresses">0</h1>
+                            <p>Уникальных адресов</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-white bg-info">
+                        <div class="card-body text-center">
+                            <h1 id="avgRating">0.0</h1>
+                            <p>Средняя оценка</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-white bg-warning">
+                        <div class="card-body text-center">
+                            <h1 id="lastUpdate">-</h1>
+                            <p>Обновлено</p>
+                        </div>
                     </div>
                 </div>
             </div>
-            <div class="col-md-3">
-                <div class="card text-white bg-success">
-                    <div class="card-body text-center">
-                        <h1 id="uniqueAddresses">0</h1>
-                        <p>Уникальных адресов</p>
-                    </div>
-                </div>
+            
+            <div class="mt-4">
+                <canvas id="resultsChart" height="100"></canvas>
             </div>
-            <div class="col-md-3">
-                <div class="card text-white bg-info">
-                    <div class="card-body text-center">
-                        <h1 id="avgRating">0.0</h1>
-                        <p>Средняя оценка</p>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card text-white bg-warning">
-                    <div class="card-body text-center">
-                        <h1 id="lastUpdate">-</h1>
-                        <p>Обновлено</p>
-                    </div>
-                </div>
+            
+            <div class="mt-4" id="addressesList">
+                <h4>Проголосовавшие адреса:</h4>
+                <div id="addresses" class="mt-2"></div>
             </div>
         </div>
         
-        <div class="mt-4">
-            <canvas id="resultsChart" height="100"></canvas>
-        </div>
-        
-        <div class="mt-4" id="addressesList">
-            <h4>Проголосовавшие адреса:</h4>
-            <div id="addresses">Загрузка...</div>
+        <!-- Сообщение об ошибке -->
+        <div id="errorMessage" class="alert alert-danger mt-4" style="display: none;">
+            <i class="fas fa-exclamation-triangle"></i>
+            <span id="errorText">Ошибка загрузки данных</span>
         </div>
     </div>
 
     <script>
-        // Тот же конфиг Firebase
+        // === КОНФИГУРАЦИЯ FIREBASE ===
+        // ⚠️ ВАЖНО: Убедитесь что databaseURL ПРАВИЛЬНЫЙ!
+        
         const FIREBASE_CONFIG = {
             apiKey: "AIzaSyA9x1ZcFgHjklmnoiT2XqPq3RzABCDEFGH",
             authDomain: "poll-hope-11.firebaseapp.com",
-            databaseURL: "https://poll-hope-11-default-rtdb.firebaseio.com/",
+            // ⚠️ ЭТОТ URL ДОЛЖЕН БЫТЬ ПРАВИЛЬНЫМ:
+            databaseURL: "https://poll-hope-11-default-rtdb.firebaseio.com",
             projectId: "poll-hope-11",
             storageBucket: "poll-hope-11.appspot.com",
             messagingSenderId: "123456789012",
@@ -84,53 +104,121 @@
         let votes = [];
         let chart = null;
         
+        // === ФУНКЦИИ ===
+        
         // Инициализация Firebase
         function initFirebase() {
+            console.log("Инициализация Firebase...");
+            
             if (typeof firebase === 'undefined') {
-                const script1 = document.createElement('script');
-                script1.src = "https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js";
-                script1.onload = () => {
-                    const script2 = document.createElement('script');
-                    script2.src = "https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js";
-                    script2.onload = loadData;
-                    document.head.appendChild(script2);
-                };
-                document.head.appendChild(script1);
+                // Загружаем Firebase SDK
+                loadFirebaseSDK();
             } else {
+                // Firebase уже загружен
+                initializeApp();
+            }
+        }
+        
+        function loadFirebaseSDK() {
+            const script1 = document.createElement('script');
+            script1.src = "https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js";
+            
+            script1.onload = () => {
+                console.log("Firebase App загружен");
+                
+                const script2 = document.createElement('script');
+                script2.src = "https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js";
+                
+                script2.onload = () => {
+                    console.log("Firebase Database загружен");
+                    initializeApp();
+                };
+                
+                script2.onerror = (error) => {
+                    showError("Не удалось загрузить Firebase Database");
+                    console.error("Firebase Database error:", error);
+                };
+                
+                document.head.appendChild(script2);
+            };
+            
+            script1.onerror = (error) => {
+                showError("Не удалось загрузить Firebase");
+                console.error("Firebase App error:", error);
+            };
+            
+            document.head.appendChild(script1);
+        }
+        
+        function initializeApp() {
+            try {
+                // Инициализируем Firebase
+                firebase.initializeApp(FIREBASE_CONFIG);
+                console.log("Firebase инициализирован");
+                
+                // Загружаем данные
                 loadData();
+                
+            } catch (error) {
+                showError("Ошибка инициализации Firebase: " + error.message);
+                console.error("Initialize error:", error);
             }
         }
         
         async function loadData() {
             try {
-                firebase.initializeApp(FIREBASE_CONFIG);
                 const db = firebase.database();
+                console.log("Загрузка данных из Firebase...");
                 
                 const snapshot = await db.ref('votes').once('value');
-                votes = Object.values(snapshot.val() || {});
+                const data = snapshot.val();
                 
+                if (data) {
+                    votes = Object.values(data);
+                    console.log(`Загружено ${votes.length} голосов`);
+                } else {
+                    votes = [];
+                    console.log("Нет данных в Firebase");
+                }
+                
+                // Скрываем индикатор загрузки, показываем контент
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('content').style.display = 'block';
+                
+                // Обновляем статистику
                 updateStatistics();
                 createChart();
                 
-                // Слушаем обновления в реальном времени
+                // Слушаем новые голоса в реальном времени
                 db.ref('votes').on('child_added', () => {
-                    location.reload(); // Просто перезагружаем при новых данных
+                    console.log("Новый голос, обновляем...");
+                    location.reload(); // Просто перезагружаем
                 });
                 
             } catch (error) {
-                console.error("Ошибка загрузки:", error);
-                document.getElementById('addresses').innerHTML = 
-                    '<div class="alert alert-danger">Ошибка загрузки данных</div>';
+                showError("Ошибка загрузки данных: " + error.message);
+                console.error("Load data error:", error);
+                document.getElementById('loading').style.display = 'none';
             }
         }
         
         function updateStatistics() {
-            // Общее количество
+            // Общее количество голосов
             document.getElementById('totalVotes').textContent = votes.length;
+            
+            if (votes.length === 0) {
+                document.getElementById('addresses').innerHTML = 
+                    '<div class="alert alert-info">Пока нет голосов. Будьте первым!</div>';
+                return;
+            }
             
             // Уникальные адреса
             const addresses = new Set();
-            votes.forEach(v => addresses.add(v.street + ', ' + v.house));
+            votes.forEach(v => {
+                if (v.street && v.house) {
+                    addresses.add(v.street + ', ' + v.house);
+                }
+            });
             document.getElementById('uniqueAddresses').textContent = addresses.size;
             
             // Средняя оценка
@@ -138,10 +226,10 @@
             let ratingCount = 0;
             
             votes.forEach(vote => {
-                if (vote.answers) {
+                if (vote.answers && Array.isArray(vote.answers)) {
                     vote.answers.forEach(answer => {
                         const value = parseInt(answer.value);
-                        if (!isNaN(value)) {
+                        if (!isNaN(value) && value >= 1 && value <= 5) {
                             totalRating += value;
                             ratingCount++;
                         }
@@ -152,57 +240,80 @@
             const avg = ratingCount > 0 ? (totalRating / ratingCount).toFixed(1) : "0.0";
             document.getElementById('avgRating').textContent = avg;
             
-            // Последнее обновление
-            if (votes.length > 0) {
-                const lastVote = votes.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))[0];
-                const date = new Date(lastVote.timestamp);
+            // Время последнего обновления
+            const sortedVotes = [...votes].sort((a, b) => 
+                new Date(b.timestamp || 0) - new Date(a.timestamp || 0)
+            );
+            
+            if (sortedVotes.length > 0 && sortedVotes[0].timestamp) {
+                const lastDate = new Date(sortedVotes[0].timestamp);
                 document.getElementById('lastUpdate').textContent = 
-                    date.toLocaleTimeString('ru-RU', {hour: '2-digit', minute:'2-digit'});
+                    lastDate.toLocaleTimeString('ru-RU', {hour: '2-digit', minute:'2-digit'});
             }
             
-            // Список адресов
+            // Список адресов с количеством голосов
             const addressMap = {};
             votes.forEach(v => {
-                const addr = v.street + ', ' + v.house;
-                addressMap[addr] = (addressMap[addr] || 0) + 1;
+                if (v.street && v.house) {
+                    const addr = v.street + ', ' + v.house;
+                    addressMap[addr] = (addressMap[addr] || 0) + 1;
+                }
             });
             
-            let addressesHtml = '<ul class="list-group">';
-            Object.keys(addressMap).forEach(addr => {
+            // Сортируем по количеству голосов
+            const sortedAddresses = Object.keys(addressMap)
+                .sort((a, b) => addressMap[b] - addressMap[a])
+                .slice(0, 20); // Показываем первые 20
+            
+            let addressesHtml = '<div class="list-group">';
+            sortedAddresses.forEach(addr => {
                 addressesHtml += `
-                    <li class="list-group-item d-flex justify-content-between">
-                        <span>${addr}</span>
-                        <span class="badge bg-primary">${addressMap[addr]}</span>
-                    </li>
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        ${addr}
+                        <span class="badge bg-primary rounded-pill">${addressMap[addr]}</span>
+                    </div>
                 `;
             });
-            addressesHtml += '</ul>';
             
+            if (Object.keys(addressMap).length > 20) {
+                addressesHtml += `<div class="list-group-item text-muted text-center">
+                    ... и еще ${Object.keys(addressMap).length - 20} адресов
+                </div>`;
+            }
+            
+            addressesHtml += '</div>';
             document.getElementById('addresses').innerHTML = addressesHtml;
         }
         
         function createChart() {
+            if (votes.length === 0) {
+                document.getElementById('resultsChart').style.display = 'none';
+                return;
+            }
+            
             const ctx = document.getElementById('resultsChart').getContext('2d');
             
-            // Подсчет оценок по вопросам
+            // Названия вопросов
             const questions = [
                 "Уборка подъездов",
-                "Вывоз мусора",
+                "Вывоз мусора", 
                 "Состояние лифтов",
                 "Уборка двора",
                 "Освещение"
             ];
             
+            // Считаем средние оценки
             const averages = [];
+            const voteCounts = [];
             
-            for (let i = 0; i < 5; i++) {
+            for (let qIndex = 0; qIndex < 5; qIndex++) {
                 let sum = 0;
                 let count = 0;
                 
                 votes.forEach(vote => {
-                    if (vote.answers && vote.answers[i]) {
-                        const value = parseInt(vote.answers[i].value);
-                        if (!isNaN(value)) {
+                    if (vote.answers && vote.answers[qIndex]) {
+                        const value = parseInt(vote.answers[qIndex].value);
+                        if (!isNaN(value) && value >= 1 && value <= 5) {
                             sum += value;
                             count++;
                         }
@@ -210,7 +321,15 @@
                 });
                 
                 averages.push(count > 0 ? (sum / count).toFixed(1) : 0);
+                voteCounts.push(count);
             }
+            
+            // Определяем цвета по оценке
+            const backgroundColors = averages.map(avg => {
+                if (avg >= 4) return 'rgba(75, 192, 192, 0.7)'; // зеленый
+                if (avg >= 3) return 'rgba(255, 206, 86, 0.7)'; // желтый
+                return 'rgba(255, 99, 132, 0.7)'; // красный
+            });
             
             // Удаляем старый график если есть
             if (chart) {
@@ -224,24 +343,13 @@
                     datasets: [{
                         label: 'Средняя оценка',
                         data: averages,
-                        backgroundColor: [
-                            'rgba(255, 99, 132, 0.7)',
-                            'rgba(54, 162, 235, 0.7)',
-                            'rgba(255, 206, 86, 0.7)',
-                            'rgba(75, 192, 192, 0.7)',
-                            'rgba(153, 102, 255, 0.7)'
-                        ],
-                        borderColor: [
-                            'rgba(255, 99, 132, 1)',
-                            'rgba(54, 162, 235, 1)',
-                            'rgba(255, 206, 86, 1)',
-                            'rgba(75, 192, 192, 1)',
-                            'rgba(153, 102, 255, 1)'
-                        ],
+                        backgroundColor: backgroundColors,
+                        borderColor: backgroundColors.map(c => c.replace('0.7', '1')),
                         borderWidth: 1
                     }]
                 },
                 options: {
+                    responsive: true,
                     scales: {
                         y: {
                             beginAtZero: true,
@@ -250,6 +358,29 @@
                                 callback: function(value) {
                                     return value + '/5';
                                 }
+                            },
+                            title: {
+                                display: true,
+                                text: 'Оценка'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Вопросы'
+                            }
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const qIndex = context.dataIndex;
+                                    return [
+                                        `Оценка: ${context.parsed.y}/5`,
+                                        `Проголосовало: ${voteCounts[qIndex]} чел.`
+                                    ];
+                                }
                             }
                         }
                     }
@@ -257,7 +388,31 @@
             });
         }
         
-        // Запуск при загрузке
+        function showError(message) {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('errorMessage').style.display = 'block';
+            document.getElementById('errorText').textContent = message;
+            
+            // Показываем кнопку для отладки
+            const debugBtn = document.createElement('button');
+            debugBtn.className = 'btn btn-sm btn-outline-danger mt-2';
+            debugBtn.innerHTML = '<i class="fas fa-bug"></i> Проверить конфигурацию';
+            debugBtn.onclick = checkFirebaseConfig;
+            document.getElementById('errorMessage').appendChild(debugBtn);
+        }
+        
+        function checkFirebaseConfig() {
+            alert(
+                "Проверьте конфигурацию Firebase:\n\n" +
+                "1. Откройте Firebase Console\n" +
+                "2. Выберите Realtime Database\n" +
+                "3. Скопируйте правильный databaseURL\n" +
+                "4. Убедитесь что он выглядит так:\n" +
+                "   https://poll-hope-11-default-rtdb.firebaseio.com"
+            );
+        }
+        
+        // Запуск при загрузке страницы
         document.addEventListener('DOMContentLoaded', initFirebase);
     </script>
 </body>
