@@ -78,34 +78,7 @@ function getPollData() {
 }
 
 // Сохранение голоса
-function saveVote(voteData) {
-    const data = getPollData();
-    
-    // Проверяем дубликаты по адресу
-    const existingVote = data.votes.find(v => 
-        v.street === voteData.street && 
-        v.house === voteData.house
-    );
-    
-    if (existingVote) {
-        // Обновляем существующий голос
-        const index = data.votes.indexOf(existingVote);
-        data.votes[index] = voteData;
-    } else {
-        // Добавляем новый голос
-        data.votes.push(voteData);
-    }
-    
-    data.lastVote = new Date().toISOString();
-    data.totalVotes = data.votes.length;
-    
-    localStorage.setItem(CONFIG.storageKey, JSON.stringify(data));
-    
-    // Обновляем счетчик голосов
-    updateVotesCount();
-    
-    return true;
-}
+https://docs.google.com/spreadsheets/d/1CxItNjLD5j9NGulYN_APZc8ATBvU9Q4X9FQQS-iB6_w/edit?usp=sharing
 
 // Получение статистики
 function getStatistics() {
