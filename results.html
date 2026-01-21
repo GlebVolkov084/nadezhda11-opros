@@ -3,47 +3,262 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Результаты опроса</title>
+    <title>Результаты опроса - Заднепровский район</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-    <h1>Результаты опроса ЖКХ</h1>
-    <div id="results">Загрузка...</div>
-    <a href="index.html">Вернуться</a>
-    
-    <script>
-        // Тот же код Firebase что в app.js
-        // For Firebase JS SDK v7.20.0 and later, measurementId is optional
-const FIREBASE_CONFIG = {
-  apiKey: "AIzaSyBTS-0VOeGZguROG2MDbI_jk1jQZzLd3-U",
-  authDomain: "poll-hope-11.firebaseapp.com",
-  projectId: "poll-hope-11",
-  storageBucket: "poll-hope-11.firebasestorage.app",
-  messagingSenderId: "435823135667",
-  appId: "1:435823135667:web:6ba49658720ffb5d9819c6",
-  measurementId: "G-XJGQMVV4VW"
-};
+    <nav class="navbar navbar-dark bg-primary">
+        <div class="container">
+            <span class="navbar-brand">
+                <i class="fas fa-chart-bar"></i> Результаты опроса
+            </span>
+            <a href="index.html" class="btn btn-light">
+                <i class="fas fa-vote-yea"></i> Вернуться к голосованию
+            </a>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <h1 class="text-center">Результаты опроса ЖКХ</h1>
+        <h3 class="text-center text-muted">Заднепровский район</h3>
         
-        // Инициализация
-        const script = document.createElement('script');
-        script.src = "https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js";
-        script.onload = () => {
-            const script2 = document.createElement('script');
-            script2.src = "https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js";
-            script2.onload = async () => {
+        <div class="row mt-4">
+            <div class="col-md-3">
+                <div class="card text-white bg-primary">
+                    <div class="card-body text-center">
+                        <h1 id="totalVotes">0</h1>
+                        <p>Всего голосов</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-white bg-success">
+                    <div class="card-body text-center">
+                        <h1 id="uniqueAddresses">0</h1>
+                        <p>Уникальных адресов</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-white bg-info">
+                    <div class="card-body text-center">
+                        <h1 id="avgRating">0.0</h1>
+                        <p>Средняя оценка</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-white bg-warning">
+                    <div class="card-body text-center">
+                        <h1 id="lastUpdate">-</h1>
+                        <p>Обновлено</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="mt-4">
+            <canvas id="resultsChart" height="100"></canvas>
+        </div>
+        
+        <div class="mt-4" id="addressesList">
+            <h4>Проголосовавшие адреса:</h4>
+            <div id="addresses">Загрузка...</div>
+        </div>
+    </div>
+
+    <script>
+        // Тот же конфиг Firebase
+        const FIREBASE_CONFIG = {
+            apiKey: "AIzaSyA9x1ZcFgHjklmnoiT2XqPq3RzABCDEFGH",
+            authDomain: "poll-hope-11.firebaseapp.com",
+            databaseURL: "https://poll-hope-11-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "poll-hope-11",
+            storageBucket: "poll-hope-11.appspot.com",
+            messagingSenderId: "123456789012",
+            appId: "1:123456789012:web:abcdef1234567890"
+        };
+        
+        let votes = [];
+        let chart = null;
+        
+        // Инициализация Firebase
+        function initFirebase() {
+            if (typeof firebase === 'undefined') {
+                const script1 = document.createElement('script');
+                script1.src = "https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js";
+                script1.onload = () => {
+                    const script2 = document.createElement('script');
+                    script2.src = "https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js";
+                    script2.onload = loadData;
+                    document.head.appendChild(script2);
+                };
+                document.head.appendChild(script1);
+            } else {
+                loadData();
+            }
+        }
+        
+        async function loadData() {
+            try {
                 firebase.initializeApp(FIREBASE_CONFIG);
                 const db = firebase.database();
                 
                 const snapshot = await db.ref('votes').once('value');
-                const votes = Object.values(snapshot.val() || {});
+                votes = Object.values(snapshot.val() || {});
                 
-                document.getElementById('results').innerHTML = `
-                    <h3>Всего голосов: ${votes.length}</h3>
-                    ${votes.map(v => `<p>${v.street}, ${v.house}</p>`).join('')}
+                updateStatistics();
+                createChart();
+                
+                // Слушаем обновления в реальном времени
+                db.ref('votes').on('child_added', () => {
+                    location.reload(); // Просто перезагружаем при новых данных
+                });
+                
+            } catch (error) {
+                console.error("Ошибка загрузки:", error);
+                document.getElementById('addresses').innerHTML = 
+                    '<div class="alert alert-danger">Ошибка загрузки данных</div>';
+            }
+        }
+        
+        function updateStatistics() {
+            // Общее количество
+            document.getElementById('totalVotes').textContent = votes.length;
+            
+            // Уникальные адреса
+            const addresses = new Set();
+            votes.forEach(v => addresses.add(v.street + ', ' + v.house));
+            document.getElementById('uniqueAddresses').textContent = addresses.size;
+            
+            // Средняя оценка
+            let totalRating = 0;
+            let ratingCount = 0;
+            
+            votes.forEach(vote => {
+                if (vote.answers) {
+                    vote.answers.forEach(answer => {
+                        const value = parseInt(answer.value);
+                        if (!isNaN(value)) {
+                            totalRating += value;
+                            ratingCount++;
+                        }
+                    });
+                }
+            });
+            
+            const avg = ratingCount > 0 ? (totalRating / ratingCount).toFixed(1) : "0.0";
+            document.getElementById('avgRating').textContent = avg;
+            
+            // Последнее обновление
+            if (votes.length > 0) {
+                const lastVote = votes.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))[0];
+                const date = new Date(lastVote.timestamp);
+                document.getElementById('lastUpdate').textContent = 
+                    date.toLocaleTimeString('ru-RU', {hour: '2-digit', minute:'2-digit'});
+            }
+            
+            // Список адресов
+            const addressMap = {};
+            votes.forEach(v => {
+                const addr = v.street + ', ' + v.house;
+                addressMap[addr] = (addressMap[addr] || 0) + 1;
+            });
+            
+            let addressesHtml = '<ul class="list-group">';
+            Object.keys(addressMap).forEach(addr => {
+                addressesHtml += `
+                    <li class="list-group-item d-flex justify-content-between">
+                        <span>${addr}</span>
+                        <span class="badge bg-primary">${addressMap[addr]}</span>
+                    </li>
                 `;
-            };
-            document.head.appendChild(script2);
-        };
-        document.head.appendChild(script);
+            });
+            addressesHtml += '</ul>';
+            
+            document.getElementById('addresses').innerHTML = addressesHtml;
+        }
+        
+        function createChart() {
+            const ctx = document.getElementById('resultsChart').getContext('2d');
+            
+            // Подсчет оценок по вопросам
+            const questions = [
+                "Уборка подъездов",
+                "Вывоз мусора",
+                "Состояние лифтов",
+                "Уборка двора",
+                "Освещение"
+            ];
+            
+            const averages = [];
+            
+            for (let i = 0; i < 5; i++) {
+                let sum = 0;
+                let count = 0;
+                
+                votes.forEach(vote => {
+                    if (vote.answers && vote.answers[i]) {
+                        const value = parseInt(vote.answers[i].value);
+                        if (!isNaN(value)) {
+                            sum += value;
+                            count++;
+                        }
+                    }
+                });
+                
+                averages.push(count > 0 ? (sum / count).toFixed(1) : 0);
+            }
+            
+            // Удаляем старый график если есть
+            if (chart) {
+                chart.destroy();
+            }
+            
+            chart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: questions,
+                    datasets: [{
+                        label: 'Средняя оценка',
+                        data: averages,
+                        backgroundColor: [
+                            'rgba(255, 99, 132, 0.7)',
+                            'rgba(54, 162, 235, 0.7)',
+                            'rgba(255, 206, 86, 0.7)',
+                            'rgba(75, 192, 192, 0.7)',
+                            'rgba(153, 102, 255, 0.7)'
+                        ],
+                        borderColor: [
+                            'rgba(255, 99, 132, 1)',
+                            'rgba(54, 162, 235, 1)',
+                            'rgba(255, 206, 86, 1)',
+                            'rgba(75, 192, 192, 1)',
+                            'rgba(153, 102, 255, 1)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 5,
+                            ticks: {
+                                callback: function(value) {
+                                    return value + '/5';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Запуск при загрузке
+        document.addEventListener('DOMContentLoaded', initFirebase);
     </script>
 </body>
 </html>
