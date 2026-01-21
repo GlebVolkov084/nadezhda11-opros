@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Админ-панель - Опрос ЖКХ</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <!-- Навигация -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="#">
+                <i class="fas fa-user-shield me-2"></i>Админ-панель
+            </a>
+            <div class="navbar-nav">
+                <a class="nav-link" href="index.html"><i class="fas fa-vote-yea"></i> Голосовать</a>
+                <a class="nav-link" href="results.html"><i class="fas fa-chart-bar"></i> Результаты</a>
+                <a class="nav-link active" href="admin.html" style="color: #ffcc00;"><i class="fas fa-user-shield"></i> Админ</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Главный контейнер -->
+    <div class="container mt-4">
+        <!-- Заголовок -->
+        <div class="text-center mb-5">
+            <h1 class="display-5"><i class="fas fa-user-shield text-warning"></i> Панель администратора</h1>
+            <h3 class="text-muted">Опрос качества ЖКХ: <span class="text-primary" id="districtName">[Ваш район]</span></h3>
+            <p class="lead">Управление данными и настройки опроса</p>
+        </div>
+
+        <!-- Защита паролем -->
+        <div class="row" id="passwordSection">
+            <div class="col-md-6 mx-auto">
+                <div class="card">
+                    <div class="card-header bg-warning">
+                        <h5 class="mb-0"><i class="fas fa-lock"></i> Вход в админ-панель</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label">Пароль администратора</label>
+                            <input type="password" class="form-control" id="adminPassword" 
+                                   placeholder="Введите пароль" value="admin123">
+                        </div>
+                        <button class="btn btn-warning w-100" onclick="checkPassword()">
+                            <i class="fas fa-sign-in-alt"></i> Войти
+                        </button>
+                        <div class="mt-3">
+                            <small class="text-muted">По умолчанию пароль: <code>admin123</code></small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Основной контент (скрыт до ввода пароля) -->
+        <div id="adminContent" style="display: none;">
+            <!-- Статистика -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0"><i class="fas fa-chart-bar"></i> Быстрая статистика</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row text-center">
+                                <div class="col-md-3">
+                                    <h2 id="adminTotalVotes">0</h2>
+                                    <p class="text-muted">Всего голосов</p>
+                                </div>
+                                <div class="col-md-3">
+                                    <h2 id="adminUniqueAddresses">0</h2>
+                                    <p class="text-muted">Уникальных адресов</p>
+                                </div>
+                                <div class="col-md-3">
+                                    <h2 id="adminLastVote">-</h2>
+                                    <p class="text-muted">Последний голос</p>
+                                </div>
+                                <div class="col-md-3">
+                                    <h2 id="adminDataSize">0 KB</h2>
+                                    <p class="text-muted">Размер данных</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Управление данными -->
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <div class="card h-100">
+                        <div class="card-header bg-success text-white">
+                            <h5 class="mb-0"><i class="fas fa-database"></i> Экспорт данных</h5>
+                        </div>
+                        <div class="card-body">
+                            <p>Скачайте все данные голосования в формате JSON:</p>
+                            <button class="btn btn-success w-100 mb-2" onclick="exportData()">
+                                <i class="fas fa-download"></i> Скачать все данные
+                            </button>
+                            <button class="btn btn-outline-success w-100" onclick="exportFiltered()">
+                                <i class="fas fa-filter"></i> Скачать за последнюю неделю
+                            </button>
+                            <div class="mt-3">
+                                <small class="text-muted">Файл содержит все голоса с адресами, ответами и комментариями.</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="card h-100">
+                        <div class="card-header bg-info text-white">
+                            <h5 class="mb-0"><i class="fas fa-upload"></i> Импорт и объединение</h5>
+                        </div>
+                        <div class="card-body">
+                            <p>Загрузите данные от других пользователей:</p>
+                            <div class="mb-3">
+                                <label class="btn btn-info w-100">
+                                    <i class="fas fa-file-upload"></i> Выбрать JSON файлы
+                                    <input type="file" id="mergeFiles" multiple accept=".json" style="display: none;" 
+                                           onchange="handleMergeFiles(event)">
+                                </label>
+                            </div>
+                            <button class="btn btn-outline-info w-100" onclick="mergeSelectedFiles()" id="mergeBtn" disabled>
+                                <i class="fas fa-blend"></i> Объединить выбранные файлы
+                            </button>
+                            <div class="mt-3">
+                                <small class="text-muted">Выбрано файлов: <span id="fileCount">0</span></small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Очистка и сброс -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header bg-danger text-white">
+                            <h5 class="mb-0"><i class="fas fa-trash-alt"></i> Опасные операции</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <button class="btn btn-outline-danger w-100 mb-2" 
+                                            onclick="clearOldVotes()">
+                                        <i class="fas fa-calendar-times"></i> Удалить старые голосы
+                                    </button>
+                                    <small class="text-muted">Удалить голосы старше 30 дней</small>
+                                </div>
+                                <div class="col-md-4">
+                                    <button class="btn btn-outline-danger w-100 mb-2" 
+                                            onclick="removeDuplicates()">
+                                        <i class="fas fa-copy"></i> Удалить дубликаты
+                                    </button>
+                                    <small class="text-muted">Удалить повторные голоса с одного адреса</small>
+                                </div>
+                                <div class="col-md-4">
+                                    <button class="btn btn-danger w-100" 
+                                            onclick="if(confirm('ВНИМАНИЕ! Это удалит ВСЕ данные. Продолжить?')) { clearAllData(); }">
+                                        <i class="fas fa-bomb"></i> Очистить ВСЕ данные
+                                    </button>
+                                    <small class="text-muted">Полная очистка базы данных</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Настройки -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header bg-warning text-dark">
+                            <h5 class="mb-0"><i class="fas fa-cog"></i> Настройки опроса</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label class="form-label">Название района</label>
+                                <input type="text" class="form-control" id="districtInput" 
+                                       value="Ваш район">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Пароль администратора</label>
+                                <input type="password" class="form-control" id="newPassword" 
+                                       placeholder="Новый пароль">
+                            </div>
+                            <button class="btn btn-warning" onclick="saveSettings()">
+                                <i class="fas fa-save"></i> Сохранить настройки
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Информация -->
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header bg-secondary text-white">
+                            <h5 class="mb-0"><i class="fas fa-info-circle"></i> Информация для администратора</h5>
+                        </div>
+                        <div class="card-body">
+                            <h6>Как собирать общую статистику:</h6>
+                            <ol>
+                                <li>Попросите каждого участника экспортировать данные (results.html → Экспорт)</li>
+                                <li>Соберите все JSON файлы</li>
+                                <li>Загрузите их здесь через "Импорт и объединение"</li>
+                                <li>Экспортируйте объединенные данные</li>
+                            </ol>
+                            
+                            <h6>Безопасность:</h6>
+                            <ul>
+                                <li>Поменяйте пароль по умолчанию</li>
+                                <li>Регулярно экспортируйте данные для резервного копирования</li>
+                                <li>Не делитесь паролем администратора</li>
+                            </ul>
+                            
+                            <div class="alert alert-info">
+                                <i class="fas fa-lightbulb"></i>
+                                <strong>Совет:</strong> Для массового сбора данных создайте группу в мессенджере 
+                                и попросите всех присылать JSON файлы после голосования.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Подвал -->
+    <footer class="footer mt-5 py-4 bg-dark text-white">
+        <div class="container text-center">
+            <p>© 2024 Совет жителей района. Административная панель.</p>
+            <p class="small">
+                <i class="fas fa-shield-alt"></i> Доступ только для администраторов
+            </p>
+        </div>
+    </footer>
+
+    <!-- Скрипты -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="app.js"></script>
+    <script>
+        let filesToMerge = [];
+        
+        // Проверка пароля
+        function checkPassword() {
+            const password = document.getElementById('adminPassword').value;
+            const defaultPassword = 'admin123';
+            
+            if (password === defaultPassword) {
+                document.getElementById('passwordSection').style.display = 'none';
+                document.getElementById('adminContent').style.display = 'block';
+                loadAdminStats();
+            } else {
+                alert('Неверный пароль!');
+            }
+        }
+        
+        // Загрузка статистики для админа
+        function loadAdminStats() {
+            const data = getPollData();
+            if (!data) return;
+            
+            document.getElementById('adminTotalVotes').textContent = data.votes.length;
+            
+            // Уникальные адреса
+            const uniqueAddresses = new Set();
+            data.votes.forEach(vote => {
+                uniqueAddresses.add(`${vote.street}, ${vote.house}`);
+            });
+            document.getElementById('adminUniqueAddresses').textContent = uniqueAddresses.size;
+            
+            // Последний голос
+            if (data.lastVote) {
+                const lastDate = new Date(data.lastVote);
+                document.getElementById('adminLastVote').textContent = 
+                    lastDate.toLocaleDateString('ru-RU');
+            }
+            
+            // Размер данных
+            const jsonString = JSON.stringify(data);
+            const sizeInKB = (jsonString.length / 1024).toFixed(2);
+            document.getElementById('adminDataSize').textContent = sizeInKB + ' KB';
+            
+            // Название района
+            document.getElementById('districtInput').value = CONFIG.district;
+        }
+        
+        // Экспорт отфильтрованных данных
+        function exportFiltered() {
+            const data = getPollData();
+            if (!data) return;
+            
+            // Фильтруем голоса за последнюю неделю
+            const weekAgo = new Date();
+            weekAgo.setDate(weekAgo.getDate() - 7);
+            
+            const filteredVotes = data.votes.filter(vote => {
+                const voteDate = new Date(vote.timestamp);
+                return voteDate > weekAgo;
+            });
+            
+            const filteredData = {
+                ...data,
+                votes: filteredVotes,
+                totalVotes: filteredVotes.length,
+                note: 'Данные за последнюю неделю'
+            };
+            
+            const jsonString = JSON.stringify(filteredData, null, 2);
+            const blob = new Blob([jsonString], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `jkh-poll-${CONFIG.district}-last-week.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            alert(`Экспортировано ${filteredVotes.length} голосов за последнюю неделю`);
+        }
+        
+        // Обработка файлов для объединения
+        function handleMergeFiles(event) {
+            filesToMerge = Array.from(event.target.files);
+            document.getElementById('fileCount').textContent = filesToMerge.length;
+            document.getElementById('mergeBtn').disabled = filesToMerge.length === 0;
+        }
+        
+        // Объединение выбранных файлов
+        function mergeSelectedFiles() {
+            if (filesToMerge.length === 0) {
+                alert('Сначала выберите файлы для объединения');
+                return;
+            }
+            
+            const readers = filesToMerge.map(file => {
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        try {
+                            const data = JSON.parse(e.target.result);
+                            resolve(data);
+                        } catch (error) {
+                            reject(`Ошибка в файле ${file.name}: ${error.message}`);
+                        }
+                    };
+                    reader.onerror = () => reject(`Ошибка чтения файла ${file.name}`);
+                    reader.readAsText(file);
+                });
+            });
+            
+            Promise.all(readers)
+                .then(results => {
+                    // Объединяем все голоса
+                    const mainData = getPollData();
+                    let addedCount = 0;
+                    
+                    results.forEach(result => {
+                        if (result && result.votes && Array.isArray(result.votes)) {
+                            result.votes.forEach(vote => {
+                                // Проверяем, нет ли такого голоса
+                                const exists = mainData.votes.some(v => 
+                                    v.id === vote.id || 
+                                    (v.street === vote.street && 
+                                     v.house === vote.house && 
+                                     Math.abs(new Date(v.timestamp) - new Date(vote.timestamp)) < 60000) // +- 1 минута
+                                );
+                                
+                                if (!exists) {
+                                    mainData.votes.push(vote);
+                                    addedCount++;
+                                }
+                            });
+                        }
+                    });
+                    
+                    if (addedCount > 0) {
+                        mainData.totalVotes = mainData.votes.length;
+                        mainData.lastMerge = new Date().toISOString();
+                        localStorage.setItem(CONFIG.storageKey, JSON.stringify(mainData));
+                        
+                        alert(`Успешно объединено! Добавлено ${addedCount} новых голосов. Всего: ${mainData.totalVotes}`);
+                        loadAdminStats();
+                    } else {
+                        alert('Нет новых данных для добавления.');
+                    }
+                })
+                .catch(error => {
+                    alert('Ошибка при объединении файлов: ' + error);
+                });
+        }
+        
+        // Удаление старых голосов
+        function clearOldVotes() {
+            if (!confirm('Удалить голосы старше 30 дней?')) return;
+            
+            const data = getPollData();
+            const monthAgo = new Date();
+            monthAgo.setDate(monthAgo.getDate() - 30);
+            
+            const oldVotesCount = data.votes.length;
+            data.votes = data.votes.filter(vote => {
+                const voteDate = new Date(vote.timestamp);
+                return voteDate > monthAgo;
+            });
+            
+            const removedCount = oldVotesCount - data.votes.length;
+            data.totalVotes = data.votes.length;
+            
+            localStorage.setItem(CONFIG.storageKey, JSON.stringify(data));
+            
+            alert(`Удалено ${removedCount} старых голосов. Осталось: ${data.votes.length}`);
+            loadAdminStats();
+        }
+        
+        // Удаление дубликатов
+        function removeDuplicates() {
+            if (!confirm('Удалить повторные голоса с одного адреса?')) return;
+            
+            const data = getPollData();
+            const uniqueVotes = [];
+            const seenAddresses = new Set();
+            let removedCount = 0;
+            
+            // Сортируем по времени (новые первые)
+            data.votes.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+            
+            data.votes.forEach(vote => {
+                const addressKey = `${vote.street}, ${vote.house}`;
+                if (!seenAddresses.has(addressKey)) {
+                    uniqueVotes.push(vote);
+                    seenAddresses.add(addressKey);
+                } else {
+                    removedCount++;
+                }
+            });
+            
+            data.votes = uniqueVotes;
+            data.totalVotes = data.votes.length;
+            
+            localStorage.setItem(CONFIG.storageKey, JSON.stringify(data));
+            
+            alert(`Удалено ${removedCount} дубликатов. Осталось уникальных: ${data.votes.length}`);
+            loadAdminStats();
+        }
+        
+        // Очистка всех данных
+        function clearAllData() {
+            localStorage.removeItem(CONFIG.storageKey);
+            initStorage();
+            alert('Все данные очищены!');
+            loadAdminStats();
+        }
+        
+        // Сохранение настроек
+        function saveSettings() {
+            const newDistrict = document.getElementById('districtInput').value;
+            const newPassword = document.getElementById('newPassword').value;
+            
+            // Обновляем название района в конфиге
+            if (newDistrict && newDistrict !== CONFIG.district) {
+                CONFIG.district = newDistrict;
+                
+                // Обновляем в localStorage
+                const data = getPollData();
+                data.district = newDistrict;
+                localStorage.setItem(CONFIG.storageKey, JSON.stringify(data));
+                
+                // Обновляем на странице
+                document.getElementById('districtName').textContent = newDistrict;
+            }
+            
+            // Обновляем пароль (в реальном приложении нужно хэшировать)
+            if (newPassword) {
+                alert('Пароль изменен. Новый пароль: ' + newPassword);
+                // В реальном приложении здесь должно быть сохранение пароля
+            }
+            
+            alert('Настройки сохранены!');
+        }
+        
+        // Автоматический вход при наличии правильного пароля в URL
+        document.addEventListener('DOMContentLoaded', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const passwordParam = urlParams.get('password');
+            
+            if (passwordParam === 'admin123') {
+                document.getElementById('adminPassword').value = 'admin123';
+                checkPassword();
+            }
+            
+            // Устанавливаем название района
+            document.getElementById('districtName').textContent = CONFIG.district;
+        });
+    </script>
+</body>
+</html>
