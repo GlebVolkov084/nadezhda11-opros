@@ -3,196 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Оценка ЖКХ - [Ваш район]</title>
+    <title>Опрос ЖКХ - Заднепровский район</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
-    <!-- Навигация -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
-        <div class="container">
-            <a class="navbar-brand" href="#">
-                <i class="fas fa-home me-2"></i>Оценка ЖКХ
-            </a>
-            <div class="navbar-nav">
-                <a class="nav-link active" href="index.html"><i class="fas fa-vote-yea"></i> Голосовать</a>
-                <a class="nav-link" href="results.html"><i class="fas fa-chart-bar"></i> Результаты</a>
-            </div>
-            <div class="navbar-text">
-                <span id="connectionStatus" class="badge bg-success">
-                    <i class="fas fa-wifi"></i> Онлайн
-                </span>
-            </div>
-        </div>
-    </nav>
-
-    <!-- Главный контейнер -->
     <div class="container mt-4">
-        <!-- Заголовок -->
-        <div class="text-center mb-5">
-            <h1 class="display-5"><i class="fas fa-building text-primary"></i> Оценка качества услуг ЖКХ</h1>
-            <h3 class="text-muted">Район: <span class="text-primary" id="districtName">[Ваш район]</span></h3>
-            <p class="lead">Помогите сделать наш район лучше! Все голоса автоматически объединяются.</p>
-            
-            <!-- Счетчик голосов -->
-            <div class="alert alert-info d-inline-block">
-                <i class="fas fa-users me-2"></i>
-                Всего проголосовало: <strong id="totalVotes">0</strong> человек
-            </div>
-            
-            <!-- Статус синхронизации -->
-            <div class="alert alert-success d-inline-block mx-2" id="syncStatus" style="display: none;">
-                <i class="fas fa-cloud"></i> <span id="syncText">Данные синхронизированы</span>
-            </div>
+        <h1>Опрос качества ЖКХ</h1>
+        <p>Заднепровский район</p>
+        
+        <div id="questions">
+            <!-- Вопросы загрузятся через JavaScript -->
         </div>
-
-        <!-- Форма голосования -->
-        <div class="row">
-            <div class="col-lg-8 mx-auto">
-                <div class="card shadow">
-                    <div class="card-header bg-success text-white">
-                        <h4 class="mb-0"><i class="fas fa-edit me-2"></i>Форма для голосования</h4>
-                    </div>
-                    
-                    <div class="card-body">
-                        <!-- Блок адреса -->
-                        <div class="address-section mb-4 p-3 border rounded bg-light">
-                            <h5><i class="fas fa-map-marker-alt text-danger"></i> Ваш адрес</h5>
-                            <div class="row g-2">
-                                <div class="col-md-6">
-                                    <input type="text" class="form-control" id="street" 
-                                           placeholder="Улица" required>
-                                </div>
-                                <div class="col-md-3">
-                                    <input type="text" class="form-control" id="house" 
-                                           placeholder="Дом" required>
-                                </div>
-                                <div class="col-md-3">
-                                    <input type="text" class="form-control" id="entrance" 
-                                           placeholder="Подъезд (необязательно)">
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Вопросы -->
-                        <div id="questionsContainer">
-                            <!-- Вопросы будут добавляться через JavaScript -->
-                        </div>
-
-                        <!-- Комментарий -->
-                        <div class="mb-4">
-                            <label class="form-label"><i class="fas fa-comment-dots text-info"></i> Ваши предложения и замечания</label>
-                            <textarea class="form-control" id="comment" rows="3" 
-                                      placeholder="Что нужно улучшить в первую очередь? (необязательно)"></textarea>
-                        </div>
-
-                        <!-- Кнопки -->
-                        <div class="d-flex justify-content-between">
-                            <button class="btn btn-outline-secondary" onclick="clearForm()">
-                                <i class="fas fa-redo"></i> Очистить форму
-                            </button>
-                            <button class="btn btn-primary btn-lg px-5" onclick="submitVote()" id="submitBtn">
-                                <i class="fas fa-paper-plane"></i> Отправить голос
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Информация о синхронизации -->
-                <div class="card mt-4">
-                    <div class="card-body">
-                        <h5><i class="fas fa-sync-alt text-primary"></i> Как работают общие данные?</h5>
-                        <ul>
-                            <li><strong>Автоматическая синхронизация:</strong> Все голоса автоматически объединяются</li>
-                            <li><strong>Реальное время:</strong> Видите голоса других сразу после отправки</li>
-                            <li><strong>Офлайн-работа:</strong> Можно голосовать без интернета</li>
-                            <li><strong>Облачное хранение:</strong> Данные хранятся безопасно в облаке</li>
-                        </ul>
-                        <div class="alert alert-success">
-                            <i class="fas fa-check-circle"></i> 
-                            <strong>Все видят общую статистику!</strong> Ваш голос сразу добавляется к общим результатам.
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+        
+        <button onclick="submitVote()" class="btn btn-primary">Голосовать</button>
+        <a href="results.html" class="btn btn-success">Результаты</a>
     </div>
-
-    <!-- Подвал -->
-    <footer class="footer mt-5 py-4 bg-dark text-white">
-        <div class="container text-center">
-            <p>© 2024 Совет жителей района. Данные автоматически синхронизируются.</p>
-            <p class="small">
-                <i class="fas fa-cloud"></i> Облачная синхронизация | 
-                <i class="fas fa-shield-alt"></i> Данные защищены
-            </p>
-        </div>
-    </footer>
-
-    <!-- Модальное окно успеха -->
-    <div class="modal fade" id="successModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header bg-success text-white">
-                    <h5 class="modal-title"><i class="fas fa-check-circle"></i> Голос принят!</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="text-center mb-3">
-                        <i class="fas fa-check-circle fa-4x text-success mb-3"></i>
-                        <p>Спасибо за ваш голос! Данные синхронизированы с облаком.</p>
-                        <p class="text-muted">Все участники видят обновленную статистику.</p>
-                    </div>
-                    <div class="d-grid gap-2">
-                        <a href="results.html" class="btn btn-primary">
-                            <i class="fas fa-chart-bar"></i> Посмотреть общую статистику
-                        </a>
-                        <button class="btn btn-outline-secondary" data-bs-dismiss="modal">
-                            <i class="fas fa-plus-circle"></i> Добавить еще один голос
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Скрипты -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-    <!-- Firebase SDK будет загружен динамически -->
+    
     <script src="app.js"></script>
-    <script>
-        // Мониторинг соединения
-        function updateConnectionStatus() {
-            const statusElement = document.getElementById('connectionStatus');
-            if (navigator.onLine) {
-                statusElement.className = 'badge bg-success';
-                statusElement.innerHTML = '<i class="fas fa-wifi"></i> Онлайн';
-            } else {
-                statusElement.className = 'badge bg-danger';
-                statusElement.innerHTML = '<i class="fas fa-wifi-slash"></i> Офлайн';
-            }
-        }
-        
-        window.addEventListener('online', updateConnectionStatus);
-        window.addEventListener('offline', updateConnectionStatus);
-        document.addEventListener('DOMContentLoaded', updateConnectionStatus);
-        
-        // Проверка синхронизации каждые 10 секунд
-        setInterval(() => {
-            const syncElement = document.getElementById('syncStatus');
-            if (navigator.onLine && window.isFirebaseInitialized) {
-                syncElement.style.display = 'inline-block';
-                syncElement.className = 'alert alert-success d-inline-block mx-2';
-                document.getElementById('syncText').textContent = 'Синхронизировано с облаком';
-            } else if (!navigator.onLine) {
-                syncElement.style.display = 'inline-block';
-                syncElement.className = 'alert alert-warning d-inline-block mx-2';
-                document.getElementById('syncText').textContent = 'Работа в офлайн-режиме';
-            } else {
-                syncElement.style.display = 'none';
-            }
-        }, 10000);
-    </script>
 </body>
 </html>
