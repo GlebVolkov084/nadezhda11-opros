@@ -4,7 +4,7 @@
 const FIREBASE_CONFIG = {
     apiKey: "AIzaSyA9x1ZcFgHjklmnoiT2XqPq3RzABCDEFGH",
     authDomain: "poll-hope-11.firebaseapp.com",
-    databaseURL: "https://console.firebase.google.com/project/poll-hope-11/database/poll-hope-11-default-rtdb/data",
+   databaseURL: "https://poll-hope-11-default-rtdb.firebaseio.com",
     projectId: "poll-hope-11",
     storageBucket: "poll-hope-11.appspot.com",
     messagingSenderId: "123456789012",
