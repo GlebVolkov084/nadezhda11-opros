@@ -16,8 +16,9 @@
                 <i class="fas fa-home me-2"></i>Оценка ЖКХ
             </a>
             <div class="navbar-nav">
-                <a class="nav-link" href="index.html"><i class="fas fa-vote-yea"></i> Голосовать</a>
+                <a class="nav-link active" href="index.html"><i class="fas fa-vote-yea"></i> Голосовать</a>
                 <a class="nav-link" href="results.html"><i class="fas fa-chart-bar"></i> Результаты</a>
+                <a class="nav-link" href="admin.html" style="color: #ffcc00;"><i class="fas fa-user-shield"></i> Админ</a>
             </div>
         </div>
     </nav>
@@ -34,6 +35,11 @@
             <div class="alert alert-info d-inline-block">
                 <i class="fas fa-users me-2"></i>
                 Уже проголосовало: <strong id="totalVotes">0</strong> человек
+            </div>
+            
+            <!-- Статус синхронизации -->
+            <div class="alert alert-warning d-inline-block mx-2" id="syncStatus" style="display: none;">
+                <i class="fas fa-sync-alt"></i> Синхронизация...
             </div>
         </div>
 
@@ -60,7 +66,7 @@
                                 </div>
                                 <div class="col-md-3">
                                     <input type="text" class="form-control" id="entrance" 
-                                           placeholder="Подъезд">
+                                           placeholder="Подъезд (необязательно)">
                                 </div>
                             </div>
                         </div>
@@ -74,15 +80,15 @@
                         <div class="mb-4">
                             <label class="form-label"><i class="fas fa-comment-dots text-info"></i> Ваши предложения и замечания</label>
                             <textarea class="form-control" id="comment" rows="3" 
-                                      placeholder="Что нужно улучшить в первую очередь?"></textarea>
+                                      placeholder="Что нужно улучшить в первую очередь? (необязательно)"></textarea>
                         </div>
 
                         <!-- Кнопки -->
                         <div class="d-flex justify-content-between">
                             <button class="btn btn-outline-secondary" onclick="clearForm()">
-                                <i class="fas fa-redo"></i> Очистить
+                                <i class="fas fa-redo"></i> Очистить форму
                             </button>
-                            <button class="btn btn-primary btn-lg px-5" onclick="submitVote()">
+                            <button class="btn btn-primary btn-lg px-5" onclick="submitVote()" id="submitBtn">
                                 <i class="fas fa-paper-plane"></i> Отправить голос
                             </button>
                         </div>
@@ -94,15 +100,14 @@
                     <div class="card-body">
                         <h5><i class="fas fa-info-circle text-primary"></i> Как это работает?</h5>
                         <ul>
-                            <li>Все данные хранятся <strong>только в вашем браузере</strong></li>
-                            <li>Статистика обновляется в реальном времени</li>
-                            <li>Ваши ответы анонимны</li>
-                            <li>Чтобы сбросить все голоса, очистите кэш браузера</li>
+                            <li><strong>Локальное сохранение:</strong> Ваш голос сохраняется в вашем браузере</li>
+                            <li><strong>Общая статистика:</strong> Все видят общие результаты на странице статистики</li>
+                            <li><strong>Анонимность:</strong> Не сохраняются имена, только адрес</li>
+                            <li><strong>Экспорт:</strong> Администратор может скачать все голоса</li>
                         </ul>
-                        <div class="alert alert-warning">
-                            <i class="fas fa-exclamation-triangle"></i> 
-                            <strong>Важно:</strong> Если вы очистите кэш браузера, все данные голосования удалятся.
-                            Для постоянного хранения нужно будет настроить серверную часть.
+                        <div class="alert alert-success">
+                            <i class="fas fa-check-circle"></i> 
+                            <strong>Готово к использованию!</strong> Голосуйте и смотрите общую статистику.
                         </div>
                     </div>
                 </div>
@@ -116,6 +121,8 @@
             <p>© 2024 Совет жителей района. Опрос проводится анонимно.</p>
             <p class="small">
                 <i class="fas fa-shield-alt"></i> Данные не передаются третьим лицам
+                | <i class="fas fa-database"></i> Локальное хранение
+                | <a href="admin.html" class="text-warning">Администрирование</a>
             </p>
         </div>
     </footer>
@@ -129,15 +136,21 @@
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <p>Спасибо за ваш голос! Результаты обновлены.</p>
+                    <div class="text-center mb-3">
+                        <i class="fas fa-check-circle fa-4x text-success mb-3"></i>
+                        <p>Спасибо за ваш голос! Результаты обновлены.</p>
+                    </div>
                     <p>Вы можете:</p>
                     <div class="d-grid gap-2">
                         <a href="results.html" class="btn btn-primary">
                             <i class="fas fa-chart-bar"></i> Посмотреть статистику
                         </a>
                         <button class="btn btn-outline-secondary" data-bs-dismiss="modal">
-                            Остаться на этой странице
+                            <i class="fas fa-plus-circle"></i> Добавить еще один голос
                         </button>
+                        <a href="#" class="btn btn-link text-muted" onclick="sharePoll()">
+                            <i class="fas fa-share-alt"></i> Поделиться опросом с соседями
+                        </a>
                     </div>
                 </div>
             </div>
@@ -148,15 +161,27 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="app.js"></script>
     <script>
-        // Инициализация при загрузке страницы
-        document.addEventListener('DOMContentLoaded', function() {
-            // Загружаем вопросы
-            loadQuestions();
-            // Обновляем счетчик голосов
-            updateVotesCount();
+        // Дополнительные функции
+        function sharePoll() {
+            const url = window.location.href;
+            const text = "Примите участие в опросе качества услуг ЖКХ нашего района!";
             
-            // Проверяем, голосовал ли уже пользователь с этого адреса
-            checkDuplicateVote();
+            if (navigator.share) {
+                navigator.share({
+                    title: 'Опрос ЖКХ',
+                    text: text,
+                    url: url
+                });
+            } else {
+                navigator.clipboard.writeText(url);
+                alert('Ссылка скопирована в буфер обмена! Отправьте ее соседям.');
+            }
+        }
+        
+        // Показать количество голосов при загрузке
+        document.addEventListener('DOMContentLoaded', function() {
+            const data = JSON.parse(localStorage.getItem("jkhPollData") || '{"votes": []}');
+            console.log('Загружено голосов:', data.votes.length);
         });
     </script>
 </body>
