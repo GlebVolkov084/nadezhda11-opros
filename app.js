@@ -6,7 +6,7 @@ const CONFIG = {
             id: 1,
             category: "🏠 Обслуживание дома",
             text: "Уборка подъездов и лестничных клеток",
-            type: "rating", // rating, select, yesno
+            type: "rating",
             options: ["1 - Очень плохо", "2 - Плохо", "3 - Удовлетворительно", "4 - Хорошо", "5 - Отлично"]
         },
         {
@@ -53,7 +53,12 @@ const CONFIG = {
         }
     ],
     storageKey: "jkhPollData",
-    votesKey: "jkhPollVotes"
+    
+    // === НАСТРОЙКИ GOOGLE SHEETS (опционально) ===
+    googleSheets: {
+        enabled: false, // Поставьте true когда настроите Google Sheets
+        scriptUrl: "https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec"
+    }
 };
 
 // ================ ФУНКЦИИ УПРАВЛЕНИЯ ДАННЫМИ ================
@@ -65,7 +70,8 @@ function initStorage() {
             district: CONFIG.district,
             votes: [],
             createdAt: new Date().toISOString(),
-            lastVote: null
+            lastVote: null,
+            totalVotes: 0
         };
         localStorage.setItem(CONFIG.storageKey, JSON.stringify(initialData));
     }
@@ -77,8 +83,111 @@ function getPollData() {
     return data ? JSON.parse(data) : null;
 }
 
-// Сохранение голоса
-https://docs.google.com/spreadsheets/d/1CxItNjLD5j9NGulYN_APZc8ATBvU9Q4X9FQQS-iB6_w/edit?usp=sharing
+// ================ СОХРАНЕНИЕ ГОЛОСА ================
+
+// Основная функция сохранения (локально + облако если настроено)
+async function saveVote(voteData) {
+    console.log('Сохранение голоса...', voteData);
+    
+    // 1. Всегда сохраняем локально (гарантированно работает)
+    const localSaved = saveToLocalStorage(voteData);
+    
+    // 2. Пытаемся сохранить в облако (если настроено)
+    let cloudSaved = false;
+    if (CONFIG.googleSheets.enabled) {
+        try {
+            cloudSaved = await saveToGoogleSheets(voteData);
+            console.log('Сохранено в облако:', cloudSaved);
+        } catch (error) {
+            console.warn('Не удалось сохранить в облако:', error.message);
+        }
+    }
+    
+    // 3. Обновляем интерфейс
+    updateVotesCount();
+    
+    return localSaved; // Возвращаем успех локального сохранения
+}
+
+// Локальное сохранение в localStorage
+function saveToLocalStorage(voteData) {
+    try {
+        const data = getPollData();
+        
+        // Проверяем дубликаты по адресу
+        const existingVoteIndex = data.votes.findIndex(v => 
+            v.street === voteData.street && 
+            v.house === voteData.house
+        );
+        
+        if (existingVoteIndex >= 0) {
+            // Обновляем существующий голос
+            data.votes[existingVoteIndex] = voteData;
+        } else {
+            // Добавляем новый голос
+            data.votes.push(voteData);
+        }
+        
+        data.lastVote = new Date().toISOString();
+        data.totalVotes = data.votes.length;
+        
+        localStorage.setItem(CONFIG.storageKey, JSON.stringify(data));
+        
+        console.log('Локальное сохранение: УСПЕХ. Всего голосов:', data.votes.length);
+        return true;
+        
+    } catch (error) {
+        console.error('Ошибка локального сохранения:', error);
+        return false;
+    }
+}
+
+// Сохранение в Google Sheets (опционально)
+async function saveToGoogleSheets(voteData) {
+    if (!CONFIG.googleSheets.enabled) {
+        console.log('Google Sheets отключен в настройках');
+        return false;
+    }
+    
+    try {
+        // Подготавливаем данные для отправки
+        const sheetData = {
+            timestamp: new Date().toLocaleString('ru-RU'),
+            district: CONFIG.district,
+            street: voteData.street || '',
+            house: voteData.house || '',
+            entrance: voteData.entrance || '',
+            comment: voteData.comment || ''
+        };
+        
+        // Добавляем ответы на вопросы
+        if (voteData.answers && Array.isArray(voteData.answers)) {
+            voteData.answers.forEach((answer, index) => {
+                sheetData[`question_${answer.questionId}`] = answer.value || '';
+            });
+        }
+        
+        // Отправляем данные
+        const response = await fetch(CONFIG.googleSheets.scriptUrl, {
+            method: 'POST',
+            mode: 'no-cors', // Важно для Google Apps Script!
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(sheetData)
+        });
+        
+        // При mode: 'no-cors' response всегда пустой, считаем успехом
+        console.log('Данные отправлены в Google Sheets');
+        return true;
+        
+    } catch (error) {
+        console.error('Ошибка отправки в Google Sheets:', error);
+        return false;
+    }
+}
+
+// ================ СТАТИСТИКА ================
 
 // Получение статистики
 function getStatistics() {
@@ -121,29 +230,33 @@ function getStatistics() {
         stats.byStreet[streetKey] = (stats.byStreet[streetKey] || 0) + 1;
         
         // Статистика по вопросам
-        vote.answers.forEach(answer => {
-            const questionId = answer.questionId;
-            const answerValue = answer.value;
-            
-            if (!stats.byQuestion[questionId]) return;
-            
-            stats.byQuestion[questionId].total++;
-            
-            if (stats.byQuestion[questionId].type === 'rating') {
-                // Для рейтинга получаем числовое значение (первый символ)
-                const ratingValue = parseInt(answerValue.charAt(0));
-                stats.averageRatings[questionId].sum += ratingValue;
-                stats.averageRatings[questionId].count++;
-                stats.averageRatings[questionId].average = 
-                    stats.averageRatings[questionId].sum / stats.averageRatings[questionId].count;
-            }
-            
-            // Считаем частоту каждого ответа
-            if (!stats.byQuestion[questionId].answers[answerValue]) {
-                stats.byQuestion[questionId].answers[answerValue] = 0;
-            }
-            stats.byQuestion[questionId].answers[answerValue]++;
-        });
+        if (vote.answers && Array.isArray(vote.answers)) {
+            vote.answers.forEach(answer => {
+                const questionId = answer.questionId;
+                const answerValue = answer.value;
+                
+                if (!stats.byQuestion[questionId]) return;
+                
+                stats.byQuestion[questionId].total++;
+                
+                if (stats.byQuestion[questionId].type === 'rating') {
+                    // Для рейтинга получаем числовое значение (первый символ)
+                    const ratingValue = parseInt(answerValue.charAt(0));
+                    if (!isNaN(ratingValue)) {
+                        stats.averageRatings[questionId].sum += ratingValue;
+                        stats.averageRatings[questionId].count++;
+                        stats.averageRatings[questionId].average = 
+                            stats.averageRatings[questionId].sum / stats.averageRatings[questionId].count;
+                    }
+                }
+                
+                // Считаем частоту каждого ответа
+                if (!stats.byQuestion[questionId].answers[answerValue]) {
+                    stats.byQuestion[questionId].answers[answerValue] = 0;
+                }
+                stats.byQuestion[questionId].answers[answerValue]++;
+            });
+        }
     });
     
     // Вычисляем проценты
@@ -152,7 +265,8 @@ function getStatistics() {
         Object.keys(question.answers).forEach(answer => {
             question.answers[answer] = {
                 count: question.answers[answer],
-                percentage: Math.round((question.answers[answer] / question.total) * 100)
+                percentage: question.total > 0 ? 
+                    Math.round((question.answers[answer] / question.total) * 100) : 0
             };
         });
     });
@@ -265,7 +379,9 @@ function loadQuestions() {
 }
 
 // Отправка голоса
-function submitVote() {
+async function submitVote() {
+    console.log('Начало отправки голоса...');
+    
     // Проверяем адрес
     const street = document.getElementById('street').value.trim();
     const house = document.getElementById('house').value.trim();
@@ -301,7 +417,7 @@ function submitVote() {
                 questionCard.style.borderColor = '#e74c3c';
                 setTimeout(() => {
                     questionCard.style.borderColor = '#3498db';
-                }, 1000);
+                }, 2000);
             }
         }
         
@@ -320,7 +436,7 @@ function submitVote() {
     
     // Создаем объект голоса
     const voteData = {
-        id: Date.now(), // Уникальный ID
+        id: Date.now(),
         street: street,
         house: house,
         entrance: document.getElementById('entrance').value.trim(),
@@ -330,16 +446,27 @@ function submitVote() {
         userAgent: navigator.userAgent
     };
     
+    console.log('Данные голоса подготовлены:', voteData);
+    
     // Сохраняем голос
-    if (saveVote(voteData)) {
-        // Показываем модальное окно успеха
-        const modal = new bootstrap.Modal(document.getElementById('successModal'));
-        modal.show();
+    try {
+        const saved = await saveVote(voteData);
         
-        // Очищаем форму
-        clearForm();
-    } else {
-        alert('Произошла ошибка при сохранении голоса');
+        if (saved) {
+            // Показываем модальное окно успеха
+            const modal = new bootstrap.Modal(document.getElementById('successModal'));
+            modal.show();
+            
+            // Очищаем форму
+            clearForm();
+            
+            console.log('Голос успешно сохранен!');
+        } else {
+            alert('Не удалось сохранить голос. Попробуйте еще раз.');
+        }
+    } catch (error) {
+        console.error('Ошибка при сохранении:', error);
+        alert('Произошла ошибка: ' + error.message);
     }
 }
 
@@ -358,9 +485,11 @@ function clearForm() {
                 star.querySelector('i').className = 'far fa-star';
                 star.classList.remove('active');
             });
-            document.getElementById(`answer-${q.id}`).value = '';
+            const input = document.getElementById(`answer-${q.id}`);
+            if (input) input.value = '';
         } else if (q.type === 'select') {
-            document.getElementById(`answer-${q.id}`).selectedIndex = 0;
+            const select = document.getElementById(`answer-${q.id}`);
+            if (select) select.selectedIndex = 0;
         } else if (q.type === 'yesno') {
             const radios = document.querySelectorAll(`input[name="q${q.id}"]`);
             radios.forEach(radio => radio.checked = false);
@@ -372,20 +501,13 @@ function clearForm() {
 function updateVotesCount() {
     const data = getPollData();
     const countElement = document.getElementById('totalVotes');
+    const resultsCountElement = document.getElementById('totalVotesCount');
     
     if (countElement && data) {
         countElement.textContent = data.votes.length;
     }
-}
-
-// Проверка дублирующего голоса
-function checkDuplicateVote() {
-    const data = getPollData();
-    if (!data) return;
-    
-    // Показываем предупреждение, если уже есть голоса
-    if (data.votes.length > 0) {
-        console.log(`В базе уже ${data.votes.length} голосов`);
+    if (resultsCountElement && data) {
+        resultsCountElement.textContent = data.votes.length;
     }
 }
 
@@ -403,6 +525,8 @@ function exportData() {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+    
+    alert(`Данные экспортированы! Всего голосов: ${data.votes.length}`);
 }
 
 // Импорт данных
@@ -417,6 +541,11 @@ function importData(event) {
             localStorage.setItem(CONFIG.storageKey, JSON.stringify(data));
             alert('Данные успешно импортированы!');
             updateVotesCount();
+            
+            // Перезагружаем страницу если это страница результатов
+            if (document.getElementById('resultsContainer')) {
+                setTimeout(() => location.reload(), 1000);
+            }
         } catch (error) {
             alert('Ошибка при импорте данных: ' + error.message);
         }
@@ -424,9 +553,51 @@ function importData(event) {
     reader.readAsText(file);
 }
 
+// Объединение данных из нескольких источников
+function mergeData(jsonFiles) {
+    const mainData = getPollData();
+    let totalMerged = 0;
+    
+    jsonFiles.forEach(file => {
+        try {
+            const externalData = JSON.parse(file);
+            if (externalData && externalData.votes && Array.isArray(externalData.votes)) {
+                externalData.votes.forEach(vote => {
+                    // Проверяем, нет ли такого голоса уже
+                    const exists = mainData.votes.some(v => 
+                        v.street === vote.street && 
+                        v.house === vote.house && 
+                        v.timestamp === vote.timestamp
+                    );
+                    
+                    if (!exists) {
+                        mainData.votes.push(vote);
+                        totalMerged++;
+                    }
+                });
+            }
+        } catch (error) {
+            console.error('Ошибка при слиянии файла:', error);
+        }
+    });
+    
+    if (totalMerged > 0) {
+        mainData.totalVotes = mainData.votes.length;
+        localStorage.setItem(CONFIG.storageKey, JSON.stringify(mainData));
+        alert(`Объединено ${totalMerged} новых голосов. Всего: ${mainData.totalVotes}`);
+        updateVotesCount();
+    } else {
+        alert('Нет новых данных для объединения.');
+    }
+}
+
+// ================ ИНИЦИАЛИЗАЦИЯ ================
+
 // Инициализация при загрузке страницы
 if (typeof document !== 'undefined') {
     document.addEventListener('DOMContentLoaded', function() {
+        console.log('Страница загружена, инициализация...');
+        
         // Загружаем название района
         const districtElement = document.getElementById('districtName');
         if (districtElement) {
@@ -440,14 +611,36 @@ if (typeof document !== 'undefined') {
         if (document.getElementById('questionsContainer')) {
             loadQuestions();
             updateVotesCount();
+            console.log('Страница голосования инициализирована');
         }
         
         // Если это страница результатов, загружаем их
         if (document.getElementById('resultsContainer')) {
             loadResults();
+            console.log('Страница результатов инициализирована');
         }
+        
+        // Тестовое сообщение
+        console.log('Система опроса ЖКХ готова к работе!');
     });
 }
+
+// ================ ДЛЯ GOOGLE SHEETS ================
+
+// Инструкция по настройке Google Sheets:
+/*
+1. Создайте Google Таблицу: https://sheets.google.com
+2. Настройте заголовки:
+   A: Дата, B: Улица, C: Дом, D: Подъезд, E-H: Вопросы 1-7, I: Комментарий
+
+3. Создайте Google Apps Script:
+   - Перейдите: https://script.google.com
+   - Создайте новый проект
+   - Вставьте код из файла google-script.js
+   - Разверните как веб-приложение
+   - Скопируйте URL в CONFIG.googleSheets.scriptUrl
+   - Включите: CONFIG.googleSheets.enabled = true
+*/
 
 // Экспортируем функции для использования в других файлах
 if (typeof window !== 'undefined') {
@@ -456,4 +649,6 @@ if (typeof window !== 'undefined') {
     window.submitVote = submitVote;
     window.exportData = exportData;
     window.getStatistics = getStatistics;
+    window.importData = importData;
+    window.mergeData = mergeData;
 }
