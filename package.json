@@ -1,0 +1,12 @@
+{
+  "name": "jkh-poll",
+  "version": "1.0.0",
+  "description": "Опрос качества услуг ЖКХ",
+  "main": "index.html",
+  "scripts": {
+    "start": "serve ."
+  },
+  "keywords": ["опрос", "жкх", "голосование"],
+  "author": "Совет жителей",
+  "license": "MIT"
+}
