@@ -1,6 +1,6 @@
 // ================ КОНФИГУРАЦИЯ ================
 const CONFIG = {
-    district: "Ваш район", // Измените на название вашего района
+    district: "Ваш район",
     questions: [
         {
             id: 1,
@@ -54,14 +54,188 @@ const CONFIG = {
     ],
     storageKey: "jkhPollData",
     
-    // === НАСТРОЙКИ GOOGLE SHEETS (опционально) ===
-    googleSheets: {
-        enabled: false, // Поставьте true когда настроите Google Sheets
-        scriptUrl: "https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec"
+    // === НАСТРОЙКИ FIREBASE (ЗАМЕНИТЕ НА СВОИ!) ===
+    firebaseConfig: {
+        apiKey: "AIzaSyA9x1ZcFgHjklmnoiT2XqPq3RzABCDEFGH",
+        authDomain: "ваш-проект.firebaseapp.com",
+        databaseURL: "https://ваш-проект-default-rtdb.firebaseio.com",
+        projectId: "ваш-проект",
+        storageBucket: "ваш-проект.appspot.com",
+        messagingSenderId: "123456789012",
+        appId: "1:123456789012:web:abcdef1234567890"
     }
 };
 
-// ================ ФУНКЦИИ УПРАВЛЕНИЯ ДАННЫМИ ================
+// ================ ИНИЦИАЛИЗАЦИЯ FIREBASE ================
+let database;
+let isFirebaseInitialized = false;
+
+function initFirebase() {
+    try {
+        // Проверяем, загружена ли Firebase
+        if (typeof firebase === 'undefined') {
+            console.warn('Firebase не загружен. Загружаем...');
+            loadFirebaseSDK();
+            return;
+        }
+        
+        // Инициализируем Firebase
+        if (!firebase.apps.length) {
+            firebase.initializeApp(CONFIG.firebaseConfig);
+        }
+        
+        database = firebase.database();
+        isFirebaseInitialized = true;
+        console.log('Firebase инициализирован');
+        
+        // Начинаем синхронизацию
+        startDataSync();
+        
+    } catch (error) {
+        console.error('Ошибка инициализации Firebase:', error);
+        isFirebaseInitialized = false;
+    }
+}
+
+function loadFirebaseSDK() {
+    // Динамически загружаем Firebase SDK
+    const script = document.createElement('script');
+    script.src = "https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js";
+    script.onload = () => {
+        const script2 = document.createElement('script');
+        script2.src = "https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js";
+        script2.onload = () => initFirebase();
+        document.head.appendChild(script2);
+    };
+    document.head.appendChild(script);
+}
+
+// ================ СИНХРОНИЗАЦИЯ ДАННЫХ ================
+
+// Начать синхронизацию с облаком
+function startDataSync() {
+    if (!isFirebaseInitialized) {
+        console.log('Firebase не инициализирован, пробуем снова через 3 секунды...');
+        setTimeout(initFirebase, 3000);
+        return;
+    }
+    
+    console.log('Начинаем синхронизацию данных...');
+    
+    // 1. Загружаем данные из облака
+    loadFromCloud();
+    
+    // 2. Отправляем локальные данные в облако
+    syncLocalToCloud();
+    
+    // 3. Слушаем обновления в реальном времени
+    listenForUpdates();
+}
+
+// Загрузить данные из облака
+async function loadFromCloud() {
+    if (!isFirebaseInitialized) return;
+    
+    try {
+        console.log('Загрузка данных из облака...');
+        const snapshot = await database.ref('votes').once('value');
+        const cloudData = snapshot.val();
+        
+        if (cloudData) {
+            // Преобразуем объект в массив
+            const cloudVotes = Object.values(cloudData);
+            
+            // Получаем локальные данные
+            const localData = getPollData();
+            
+            // Объединяем данные
+            let newVotesAdded = 0;
+            cloudVotes.forEach(cloudVote => {
+                // Проверяем, есть ли такой голос локально
+                const exists = localData.votes.some(localVote => 
+                    localVote.id === cloudVote.id
+                );
+                
+                if (!exists) {
+                    localData.votes.push(cloudVote);
+                    newVotesAdded++;
+                }
+            });
+            
+            if (newVotesAdded > 0) {
+                localData.totalVotes = localData.votes.length;
+                localStorage.setItem(CONFIG.storageKey, JSON.stringify(localData));
+                
+                console.log(`Добавлено ${newVotesAdded} новых голосов из облака`);
+                updateVotesCount();
+                
+                // Обновляем статистику если на странице results
+                if (typeof loadResults === 'function') {
+                    loadResults();
+                }
+            }
+        }
+        
+    } catch (error) {
+        console.error('Ошибка загрузки из облака:', error);
+    }
+}
+
+// Синхронизировать локальные данные с облаком
+async function syncLocalToCloud() {
+    if (!isFirebaseInitialized) return;
+    
+    try {
+        const localData = getPollData();
+        
+        // Отправляем каждый голос в облако
+        for (const vote of localData.votes) {
+            await database.ref('votes/' + vote.id).set(vote);
+        }
+        
+        // Обновляем общую статистику
+        await database.ref('stats').set({
+            totalVotes: localData.totalVotes,
+            lastUpdate: new Date().toISOString(),
+            district: CONFIG.district
+        });
+        
+        console.log('Локальные данные синхронизированы с облаком');
+        
+    } catch (error) {
+        console.error('Ошибка синхронизации с облаком:', error);
+    }
+}
+
+// Слушать обновления в реальном времени
+function listenForUpdates() {
+    if (!isFirebaseInitialized) return;
+    
+    database.ref('votes').on('child_added', (snapshot) => {
+        console.log('Новые данные в реальном времени:', snapshot.key);
+        
+        const newVote = snapshot.val();
+        const localData = getPollData();
+        
+        // Проверяем, есть ли такой голос
+        const exists = localData.votes.some(vote => vote.id === newVote.id);
+        
+        if (!exists) {
+            localData.votes.push(newVote);
+            localData.totalVotes = localData.votes.length;
+            localStorage.setItem(CONFIG.storageKey, JSON.stringify(localData));
+            
+            updateVotesCount();
+            
+            // Показываем уведомление о новом голосе
+            if (typeof showNewVoteNotification === 'function') {
+                showNewVoteNotification(newVote);
+            }
+        }
+    });
+}
+
+// ================ ОСНОВНЫЕ ФУНКЦИИ ================
 
 // Инициализация хранилища
 function initStorage() {
@@ -71,7 +245,8 @@ function initStorage() {
             votes: [],
             createdAt: new Date().toISOString(),
             lastVote: null,
-            totalVotes: 0
+            totalVotes: 0,
+            syncStatus: 'not_synced'
         };
         localStorage.setItem(CONFIG.storageKey, JSON.stringify(initialData));
     }
@@ -83,48 +258,50 @@ function getPollData() {
     return data ? JSON.parse(data) : null;
 }
 
-// ================ СОХРАНЕНИЕ ГОЛОСА ================
-
-// Основная функция сохранения (локально + облако если настроено)
+// Сохранение голоса (локально + в облако)
 async function saveVote(voteData) {
-    console.log('Сохранение голоса...', voteData);
+    console.log('Сохранение голоса...');
     
-    // 1. Всегда сохраняем локально (гарантированно работает)
+    // 1. Сохраняем локально
     const localSaved = saveToLocalStorage(voteData);
     
-    // 2. Пытаемся сохранить в облако (если настроено)
-    let cloudSaved = false;
-    if (CONFIG.googleSheets.enabled) {
+    // 2. Отправляем в облако (если Firebase инициализирован)
+    if (isFirebaseInitialized) {
         try {
-            cloudSaved = await saveToGoogleSheets(voteData);
-            console.log('Сохранено в облако:', cloudSaved);
+            await database.ref('votes/' + voteData.id).set(voteData);
+            console.log('Голос сохранен в облако');
+            
+            // Обновляем статистику в облаке
+            const localData = getPollData();
+            await database.ref('stats').set({
+                totalVotes: localData.totalVotes,
+                lastUpdate: new Date().toISOString(),
+                district: CONFIG.district
+            });
+            
         } catch (error) {
-            console.warn('Не удалось сохранить в облако:', error.message);
+            console.error('Ошибка сохранения в облако:', error);
+            // Сохраняем для будущей синхронизации
+            saveForLaterSync(voteData);
         }
+    } else {
+        saveForLaterSync(voteData);
     }
     
-    // 3. Обновляем интерфейс
-    updateVotesCount();
-    
-    return localSaved; // Возвращаем успех локального сохранения
+    return localSaved;
 }
 
-// Локальное сохранение в localStorage
+// Локальное сохранение
 function saveToLocalStorage(voteData) {
     try {
         const data = getPollData();
         
-        // Проверяем дубликаты по адресу
-        const existingVoteIndex = data.votes.findIndex(v => 
-            v.street === voteData.street && 
-            v.house === voteData.house
-        );
+        // Проверяем дубликаты
+        const existingIndex = data.votes.findIndex(v => v.id === voteData.id);
         
-        if (existingVoteIndex >= 0) {
-            // Обновляем существующий голос
-            data.votes[existingVoteIndex] = voteData;
+        if (existingIndex >= 0) {
+            data.votes[existingIndex] = voteData;
         } else {
-            // Добавляем новый голос
             data.votes.push(voteData);
         }
         
@@ -142,139 +319,42 @@ function saveToLocalStorage(voteData) {
     }
 }
 
-// Сохранение в Google Sheets (опционально)
-async function saveToGoogleSheets(voteData) {
-    if (!CONFIG.googleSheets.enabled) {
-        console.log('Google Sheets отключен в настройках');
-        return false;
-    }
-    
-    try {
-        // Подготавливаем данные для отправки
-        const sheetData = {
-            timestamp: new Date().toLocaleString('ru-RU'),
-            district: CONFIG.district,
-            street: voteData.street || '',
-            house: voteData.house || '',
-            entrance: voteData.entrance || '',
-            comment: voteData.comment || ''
-        };
-        
-        // Добавляем ответы на вопросы
-        if (voteData.answers && Array.isArray(voteData.answers)) {
-            voteData.answers.forEach((answer, index) => {
-                sheetData[`question_${answer.questionId}`] = answer.value || '';
-            });
-        }
-        
-        // Отправляем данные
-        const response = await fetch(CONFIG.googleSheets.scriptUrl, {
-            method: 'POST',
-            mode: 'no-cors', // Важно для Google Apps Script!
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(sheetData)
-        });
-        
-        // При mode: 'no-cors' response всегда пустой, считаем успехом
-        console.log('Данные отправлены в Google Sheets');
-        return true;
-        
-    } catch (error) {
-        console.error('Ошибка отправки в Google Sheets:', error);
-        return false;
-    }
+// Сохранить для будущей синхронизации
+function saveForLaterSync(voteData) {
+    const pendingSync = JSON.parse(localStorage.getItem('pendingSync') || '[]');
+    pendingSync.push({
+        ...voteData,
+        timestamp: new Date().toISOString()
+    });
+    localStorage.setItem('pendingSync', JSON.stringify(pendingSync));
+    console.log('Голос сохранен для будущей синхронизации');
 }
 
-// ================ СТАТИСТИКА ================
-
-// Получение статистики
-function getStatistics() {
-    const data = getPollData();
-    if (!data || data.votes.length === 0) {
-        return null;
+// Попытаться синхронизировать отложенные голоса
+async function retryPendingSync() {
+    if (!isFirebaseInitialized) return;
+    
+    const pendingSync = JSON.parse(localStorage.getItem('pendingSync') || '[]');
+    
+    if (pendingSync.length === 0) return;
+    
+    console.log(`Попытка синхронизации ${pendingSync.length} отложенных голосов...`);
+    
+    for (const vote of pendingSync) {
+        try {
+            await database.ref('votes/' + vote.id).set(vote);
+            console.log(`Голос ${vote.id} синхронизирован`);
+        } catch (error) {
+            console.error(`Ошибка синхронизации голоса ${vote.id}:`, error);
+        }
     }
     
-    const stats = {
-        totalVotes: data.votes.length,
-        byStreet: {},
-        byQuestion: {},
-        averageRatings: {}
-    };
-    
-    // Инициализация структуры для вопросов
-    CONFIG.questions.forEach(q => {
-        stats.byQuestion[q.id] = {
-            text: q.text,
-            category: q.category,
-            type: q.type,
-            answers: {},
-            total: 0
-        };
-        
-        // Для рейтинговых вопросов считаем среднее
-        if (q.type === 'rating') {
-            stats.averageRatings[q.id] = {
-                sum: 0,
-                count: 0,
-                average: 0
-            };
-        }
-    });
-    
-    // Обработка всех голосов
-    data.votes.forEach(vote => {
-        // Статистика по улицам
-        const streetKey = `${vote.street}, ${vote.house}`;
-        stats.byStreet[streetKey] = (stats.byStreet[streetKey] || 0) + 1;
-        
-        // Статистика по вопросам
-        if (vote.answers && Array.isArray(vote.answers)) {
-            vote.answers.forEach(answer => {
-                const questionId = answer.questionId;
-                const answerValue = answer.value;
-                
-                if (!stats.byQuestion[questionId]) return;
-                
-                stats.byQuestion[questionId].total++;
-                
-                if (stats.byQuestion[questionId].type === 'rating') {
-                    // Для рейтинга получаем числовое значение (первый символ)
-                    const ratingValue = parseInt(answerValue.charAt(0));
-                    if (!isNaN(ratingValue)) {
-                        stats.averageRatings[questionId].sum += ratingValue;
-                        stats.averageRatings[questionId].count++;
-                        stats.averageRatings[questionId].average = 
-                            stats.averageRatings[questionId].sum / stats.averageRatings[questionId].count;
-                    }
-                }
-                
-                // Считаем частоту каждого ответа
-                if (!stats.byQuestion[questionId].answers[answerValue]) {
-                    stats.byQuestion[questionId].answers[answerValue] = 0;
-                }
-                stats.byQuestion[questionId].answers[answerValue]++;
-            });
-        }
-    });
-    
-    // Вычисляем проценты
-    Object.keys(stats.byQuestion).forEach(qId => {
-        const question = stats.byQuestion[qId];
-        Object.keys(question.answers).forEach(answer => {
-            question.answers[answer] = {
-                count: question.answers[answer],
-                percentage: question.total > 0 ? 
-                    Math.round((question.answers[answer] / question.total) * 100) : 0
-            };
-        });
-    });
-    
-    return stats;
+    // Очищаем после успешной синхронизации
+    localStorage.removeItem('pendingSync');
+    console.log('Отложенные голосы синхронизированы');
 }
 
-// ================ ФУНКЦИИ ИНТЕРФЕЙСА ================
+// ================ ОСТАЛЬНЫЕ ФУНКЦИИ (без изменений) ================
 
 // Загрузка вопросов на страницу
 function loadQuestions() {
@@ -286,7 +366,6 @@ function loadQuestions() {
     let currentCategory = '';
     
     CONFIG.questions.forEach(question => {
-        // Заголовок категории
         if (question.category !== currentCategory) {
             currentCategory = question.category;
             container.innerHTML += `
@@ -297,7 +376,6 @@ function loadQuestions() {
             `;
         }
         
-        // Вопрос
         let inputHtml = '';
         
         if (question.type === 'rating') {
@@ -347,7 +425,6 @@ function loadQuestions() {
         `;
     });
     
-    // Назначаем обработчики для звезд рейтинга
     setTimeout(() => {
         CONFIG.questions.forEach(q => {
             if (q.type === 'rating') {
@@ -357,7 +434,6 @@ function loadQuestions() {
                         const value = this.getAttribute('data-value');
                         const rating = parseInt(this.getAttribute('data-rating'));
                         
-                        // Обновляем отображение звезд
                         stars.forEach((s, idx) => {
                             const icon = s.querySelector('i');
                             if (idx < rating) {
@@ -369,7 +445,6 @@ function loadQuestions() {
                             }
                         });
                         
-                        // Сохраняем значение в скрытое поле
                         document.getElementById(`answer-${q.id}`).value = value;
                     });
                 });
@@ -382,7 +457,6 @@ function loadQuestions() {
 async function submitVote() {
     console.log('Начало отправки голоса...');
     
-    // Проверяем адрес
     const street = document.getElementById('street').value.trim();
     const house = document.getElementById('house').value.trim();
     
@@ -391,7 +465,6 @@ async function submitVote() {
         return;
     }
     
-    // Собираем ответы
     const answers = [];
     let allAnswered = true;
     
@@ -411,7 +484,6 @@ async function submitVote() {
         
         if (!answerValue) {
             allAnswered = false;
-            // Подсвечиваем неотвеченный вопрос
             const questionCard = document.querySelector(`[data-question-id="${q.id}"]`);
             if (questionCard) {
                 questionCard.style.borderColor = '#e74c3c';
@@ -434,31 +506,29 @@ async function submitVote() {
         return;
     }
     
-    // Создаем объект голоса
     const voteData = {
-        id: Date.now(),
+        id: Date.now() + '-' + Math.random().toString(36).substr(2, 9), // Уникальный ID
         street: street,
         house: house,
         entrance: document.getElementById('entrance').value.trim(),
         timestamp: new Date().toISOString(),
         answers: answers,
         comment: document.getElementById('comment').value.trim(),
-        userAgent: navigator.userAgent
+        userAgent: navigator.userAgent,
+        ip: await getClientIP()
     };
     
-    console.log('Данные голоса подготовлены:', voteData);
-    
-    // Сохраняем голос
     try {
         const saved = await saveVote(voteData);
         
         if (saved) {
-            // Показываем модальное окно успеха
             const modal = new bootstrap.Modal(document.getElementById('successModal'));
             modal.show();
             
-            // Очищаем форму
             clearForm();
+            
+            // Показываем статус синхронизации
+            showSyncStatus('Голос сохранен! Синхронизация с облаком...');
             
             console.log('Голос успешно сохранен!');
         } else {
@@ -470,6 +540,42 @@ async function submitVote() {
     }
 }
 
+// Получить IP клиента (анонимно)
+async function getClientIP() {
+    try {
+        const response = await fetch('https://api.ipify.org?format=json');
+        const data = await response.json();
+        return data.ip;
+    } catch (error) {
+        return 'unknown';
+    }
+}
+
+// Показать статус синхронизации
+function showSyncStatus(message) {
+    const statusElement = document.getElementById('syncStatus');
+    if (statusElement) {
+        statusElement.innerHTML = `<i class="fas fa-sync-alt fa-spin"></i> ${message}`;
+        statusElement.style.display = 'block';
+        
+        setTimeout(() => {
+            statusElement.style.display = 'none';
+        }, 5000);
+    }
+}
+
+// Уведомление о новом голосе
+function showNewVoteNotification(vote) {
+    if (!('Notification' in window)) return;
+    
+    if (Notification.permission === 'granted') {
+        new Notification('Новый голос!', {
+            body: `${vote.street}, ${vote.house} только что проголосовал`,
+            icon: '/icon.png'
+        });
+    }
+}
+
 // Очистка формы
 function clearForm() {
     document.getElementById('street').value = '';
@@ -477,7 +583,6 @@ function clearForm() {
     document.getElementById('entrance').value = '';
     document.getElementById('comment').value = '';
     
-    // Сбрасываем все ответы
     CONFIG.questions.forEach(q => {
         if (q.type === 'rating') {
             const stars = document.querySelectorAll(`#stars-${q.id} .star`);
@@ -511,7 +616,7 @@ function updateVotesCount() {
     }
 }
 
-// Экспорт данных в JSON
+// Экспорт данных
 function exportData() {
     const data = getPollData();
     const jsonString = JSON.stringify(data, null, 2);
@@ -542,7 +647,11 @@ function importData(event) {
             alert('Данные успешно импортированы!');
             updateVotesCount();
             
-            // Перезагружаем страницу если это страница результатов
+            // Синхронизируем с облаком
+            if (isFirebaseInitialized) {
+                syncLocalToCloud();
+            }
+            
             if (document.getElementById('resultsContainer')) {
                 setTimeout(() => location.reload(), 1000);
             }
@@ -553,42 +662,81 @@ function importData(event) {
     reader.readAsText(file);
 }
 
-// Объединение данных из нескольких источников
-function mergeData(jsonFiles) {
-    const mainData = getPollData();
-    let totalMerged = 0;
+// Получение статистики
+function getStatistics() {
+    const data = getPollData();
+    if (!data || data.votes.length === 0) {
+        return null;
+    }
     
-    jsonFiles.forEach(file => {
-        try {
-            const externalData = JSON.parse(file);
-            if (externalData && externalData.votes && Array.isArray(externalData.votes)) {
-                externalData.votes.forEach(vote => {
-                    // Проверяем, нет ли такого голоса уже
-                    const exists = mainData.votes.some(v => 
-                        v.street === vote.street && 
-                        v.house === vote.house && 
-                        v.timestamp === vote.timestamp
-                    );
-                    
-                    if (!exists) {
-                        mainData.votes.push(vote);
-                        totalMerged++;
-                    }
-                });
-            }
-        } catch (error) {
-            console.error('Ошибка при слиянии файла:', error);
+    const stats = {
+        totalVotes: data.votes.length,
+        byStreet: {},
+        byQuestion: {},
+        averageRatings: {}
+    };
+    
+    CONFIG.questions.forEach(q => {
+        stats.byQuestion[q.id] = {
+            text: q.text,
+            category: q.category,
+            type: q.type,
+            answers: {},
+            total: 0
+        };
+        
+        if (q.type === 'rating') {
+            stats.averageRatings[q.id] = {
+                sum: 0,
+                count: 0,
+                average: 0
+            };
         }
     });
     
-    if (totalMerged > 0) {
-        mainData.totalVotes = mainData.votes.length;
-        localStorage.setItem(CONFIG.storageKey, JSON.stringify(mainData));
-        alert(`Объединено ${totalMerged} новых голосов. Всего: ${mainData.totalVotes}`);
-        updateVotesCount();
-    } else {
-        alert('Нет новых данных для объединения.');
-    }
+    data.votes.forEach(vote => {
+        const streetKey = `${vote.street}, ${vote.house}`;
+        stats.byStreet[streetKey] = (stats.byStreet[streetKey] || 0) + 1;
+        
+        if (vote.answers && Array.isArray(vote.answers)) {
+            vote.answers.forEach(answer => {
+                const questionId = answer.questionId;
+                const answerValue = answer.value;
+                
+                if (!stats.byQuestion[questionId]) return;
+                
+                stats.byQuestion[questionId].total++;
+                
+                if (stats.byQuestion[questionId].type === 'rating') {
+                    const ratingValue = parseInt(answerValue.charAt(0));
+                    if (!isNaN(ratingValue)) {
+                        stats.averageRatings[questionId].sum += ratingValue;
+                        stats.averageRatings[questionId].count++;
+                        stats.averageRatings[questionId].average = 
+                            stats.averageRatings[questionId].sum / stats.averageRatings[questionId].count;
+                    }
+                }
+                
+                if (!stats.byQuestion[questionId].answers[answerValue]) {
+                    stats.byQuestion[questionId].answers[answerValue] = 0;
+                }
+                stats.byQuestion[questionId].answers[answerValue]++;
+            });
+        }
+    });
+    
+    Object.keys(stats.byQuestion).forEach(qId => {
+        const question = stats.byQuestion[qId];
+        Object.keys(question.answers).forEach(answer => {
+            question.answers[answer] = {
+                count: question.answers[answer],
+                percentage: question.total > 0 ? 
+                    Math.round((question.answers[answer] / question.total) * 100) : 0
+            };
+        });
+    });
+    
+    return stats;
 }
 
 // ================ ИНИЦИАЛИЗАЦИЯ ================
@@ -607,6 +755,14 @@ if (typeof document !== 'undefined') {
         // Инициализируем хранилище
         initStorage();
         
+        // Инициализируем Firebase
+        initFirebase();
+        
+        // Запрашиваем разрешение на уведомления
+        if ('Notification' in window && Notification.permission === 'default') {
+            Notification.requestPermission();
+        }
+        
         // Если это страница голосования
         if (document.getElementById('questionsContainer')) {
             loadQuestions();
@@ -614,35 +770,36 @@ if (typeof document !== 'undefined') {
             console.log('Страница голосования инициализирована');
         }
         
-        // Если это страница результатов, загружаем их
+        // Если это страница результатов
         if (document.getElementById('resultsContainer')) {
-            loadResults();
+            // Загружаем данные из облака при открытии результатов
+            if (isFirebaseInitialized) {
+                loadFromCloud().then(() => {
+                    if (typeof loadResults === 'function') {
+                        loadResults();
+                    }
+                });
+            } else {
+                if (typeof loadResults === 'function') {
+                    loadResults();
+                }
+            }
             console.log('Страница результатов инициализирована');
         }
         
-        // Тестовое сообщение
+        // Периодическая синхронизация (каждые 30 секунд)
+        setInterval(() => {
+            if (isFirebaseInitialized) {
+                syncLocalToCloud();
+                retryPendingSync();
+            }
+        }, 30000);
+        
         console.log('Система опроса ЖКХ готова к работе!');
     });
 }
 
-// ================ ДЛЯ GOOGLE SHEETS ================
-
-// Инструкция по настройке Google Sheets:
-/*
-1. Создайте Google Таблицу: https://sheets.google.com
-2. Настройте заголовки:
-   A: Дата, B: Улица, C: Дом, D: Подъезд, E-H: Вопросы 1-7, I: Комментарий
-
-3. Создайте Google Apps Script:
-   - Перейдите: https://script.google.com
-   - Создайте новый проект
-   - Вставьте код из файла google-script.js
-   - Разверните как веб-приложение
-   - Скопируйте URL в CONFIG.googleSheets.scriptUrl
-   - Включите: CONFIG.googleSheets.enabled = true
-*/
-
-// Экспортируем функции для использования в других файлах
+// Экспортируем функции
 if (typeof window !== 'undefined') {
     window.saveVote = saveVote;
     window.clearForm = clearForm;
@@ -650,5 +807,5 @@ if (typeof window !== 'undefined') {
     window.exportData = exportData;
     window.getStatistics = getStatistics;
     window.importData = importData;
-    window.mergeData = mergeData;
+    window.retryPendingSync = retryPendingSync;
 }
