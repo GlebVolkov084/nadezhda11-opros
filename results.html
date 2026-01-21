@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Результаты опроса ЖКХ - [Ваш район]</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <!-- Навигация -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="#">
+                <i class="fas fa-chart-bar me-2"></i>Результаты опроса
+            </a>
+            <div class="navbar-nav">
+                <a class="nav-link" href="index.html"><i class="fas fa-vote-yea"></i> Голосовать</a>
+                <a class="nav-link active" href="results.html"><i class="fas fa-chart-bar"></i> Результаты</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Главный контейнер -->
+    <div class="container mt-4">
+        <!-- Заголовок -->
+        <div class="text-center mb-5">
+            <h1 class="display-5"><i class="fas fa-poll text-success"></i> Результаты опроса ЖКХ</h1>
+            <h3 class="text-muted">Район: <span class="text-primary" id="districtName">[Ваш район]</span></h3>
+            
+            <!-- Общая статистика -->
+            <div class="row mt-4">
+                <div class="col-md-3">
+                    <div class="card text-white bg-primary">
+                        <div class="card-body text-center">
+                            <h1 id="totalVotesCount">0</h1>
+                            <p class="mb-0">Всего голосов</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-white bg-success">
+                        <div class="card-body text-center">
+                            <h1 id="uniqueAddresses">0</h1>
+                            <p class="mb-0">Уникальных адресов</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-white bg-info">
+                        <div class="card-body text-center">
+                            <h1 id="avgRating">0.0</h1>
+                            <p class="mb-0">Средняя оценка</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-white bg-warning">
+                        <div class="card-body text-center">
+                            <h1 id="participationRate">0%</h1>
+                            <p class="mb-0">Охват района</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Управление данными -->
+        <div class="card mb-4">
+            <div class="card-header bg-secondary text-white">
+                <h5 class="mb-0"><i class="fas fa-database me-2"></i>Управление данными</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <button class="btn btn-outline-primary w-100 mb-2" onclick="exportData()">
+                            <i class="fas fa-download me-2"></i>Экспортировать данные (JSON)
+                        </button>
+                        <small class="text-muted">Скачайте все голоса для анализа</small>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="btn btn-outline-success w-100 mb-2">
+                            <i class="fas fa-upload me-2"></i>Импортировать данные
+                            <input type="file" accept=".json" style="display: none;" 
+                                   onchange="importData(event)" id="importFile">
+                        </label>
+                        <small class="text-muted">Загрузите ранее экспортированные данные</small>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <button class="btn btn-danger" onclick="if(confirm('ВНИМАНИЕ! Это удалит ВСЕ данные голосования. Продолжить?')) { localStorage.clear(); location.reload(); }">
+                        <i class="fas fa-trash me-2"></i>Очистить все данные
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Графики -->
+        <div class="row mb-5">
+            <div class="col-lg-8">
+                <div class="card">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0"><i class="fas fa-chart-line me-2"></i>Общая статистика по вопросам</h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="mainChart" height="250"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4">
+                <div class="card">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="mb-0"><i class="fas fa-map-marked-alt me-2"></i>География голосования</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="addressList" class="address-list" style="max-height: 300px; overflow-y: auto;">
+                            <!-- Список адресов будет здесь -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Детальная статистика по вопросам -->
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="fas fa-list-ol me-2"></i>Детальные результаты по вопросам</h5>
+            </div>
+            <div class="card-body" id="questionsResults">
+                <!-- Результаты будут загружены через JavaScript -->
+            </div>
+        </div>
+
+        <!-- Комментарии и предложения -->
+        <div class="card mb-4">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="mb-0"><i class="fas fa-comments me-2"></i>Комментарии и предложения жителей</h5>
+            </div>
+            <div class="card-body">
+                <div id="commentsList" class="comments-list">
+                    <!-- Комментарии будут здесь -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Вернуться к голосованию -->
+        <div class="text-center mt-5 mb-5">
+            <a href="index.html" class="btn btn-primary btn-lg">
+                <i class="fas fa-vote-yea me-2"></i>Вернуться к голосованию
+            </a>
+        </div>
+    </div>
+
+    <!-- Подвал -->
+    <footer class="footer mt-5 py-4 bg-dark text-white">
+        <div class="container text-center">
+            <p>© 2024 Совет жителей района. Статистика обновляется в реальном времени.</p>
+            <p class="small">
+                <i class="fas fa-sync-alt"></i> Данные обновляются автоматически при каждом голосовании
+            </p>
+        </div>
+    </footer>
+
+    <!-- Скрипты -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="app.js"></script>
+    <script>
+        // Функция загрузки результатов
+        function loadResults() {
+            const stats = getStatistics();
+            const pollData = getPollData();
+            
+            if (!stats || !pollData) {
+                document.getElementById('questionsResults').innerHTML = `
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i> Пока нет данных для отображения.
+                        <a href="index.html">Будьте первым, кто проголосует!</a>
+                    </div>
+                `;
+                return;
+            }
+            
+            // Общая статистика
+            document.getElementById('totalVotesCount').textContent = stats.totalVotes;
+            document.getElementById('uniqueAddresses').textContent = Object.keys(stats.byStreet).length;
+            
+            // Средняя оценка (только для рейтинговых вопросов)
+            let totalRating = 0;
+            let ratingCount = 0;
+            Object.keys(stats.averageRatings).forEach(qId => {
+                if (stats.averageRatings[qId].count > 0) {
+                    totalRating += stats.averageRatings[qId].average;
+                    ratingCount++;
+                }
+            });
+            const avgRating = ratingCount > 0 ? (totalRating / ratingCount).toFixed(1) : "0.0";
+            document.getElementById('avgRating').textContent = avgRating;
+            
+            // Охват района (предполагаем 100 домов в районе для примера)
+            const participationRate = Math.round((Object.keys(stats.byStreet).length / 100) * 100);
+            document.getElementById('participationRate').textContent = `${participationRate}%`;
+            
+            // Список адресов
+            const addressList = document.getElementById('addressList');
+            addressList.innerHTML = Object.keys(stats.byStreet)
+                .map(street => `<div class="border-bottom py-2">${street}: ${stats.byStreet[street]} голосов</div>`)
+                .join('');
+            
+            // Детальные результаты по вопросам
+            const questionsResults = document.getElementById('questionsResults');
+            questionsResults.innerHTML = '';
+            
+            Object.keys(stats.byQuestion).forEach(qId => {
+                const question = stats.byQuestion[qId];
+                if (question.total === 0) return;
+                
+                let resultsHtml = '';
+                
+                if (question.type === 'rating') {
+                    // Для рейтинговых вопросов показываем среднее
+                    const avg = stats.averageRatings[qId]?.average?.toFixed(1) || 0;
+                    resultsHtml = `
+                        <div class="mb-3">
+                            <h6>${question.text}</h6>
+                            <div class="d-flex align-items-center">
+                                <div class="me-3">
+                                    <span class="display-6 text-primary">${avg}</span>
+                                    <small class="text-muted">/5.0</small>
+                                </div>
+                                <div class="flex-grow-1">
+                                    ${Object.keys(question.answers)
+                                        .map(answer => {
+                                            const data = question.answers[answer];
+                                            const width = data.percentage || 0;
+                                            return `
+                                                <div class="mb-1">
+                                                    <small>${answer}</small>
+                                                    <div class="result-bar bg-light">
+                                                        <div class="bg-primary" style="width: ${width}%; height: 100%;"></div>
+                                                    </div>
+                                                    <small class="text-muted">${data.count} (${data.percentage}%)</small>
+                                                </div>
+                                            `;
+                                        }).join('')}
+                                </div>
+                            </div>
+                        </div>
+                        <hr>
+                    `;
+                } else {
+                    // Для других типов вопросов
+                    resultsHtml = `
+                        <div class="mb-3">
+                            <h6>${question.text}</h6>
+                            ${Object.keys(question.answers)
+                                .map(answer => {
+                                    const data = question.answers[answer];
+                                    const width = data.percentage || 0;
+                                    return `
+                                        <div class="mb-2">
+                                            <div class="d-flex justify-content-between">
+                                                <span>${answer}</span>
+                                                <span>${data.percentage}%</span>
+                                            </div>
+                                            <div class="result-bar bg-light">
+                                                <div class="bg-info" style="width: ${width}%; height: 100%;"></div>
+                                            </div>
+                                            <small class="text-muted">${data.count} голосов</small>
+                                        </div>
+                                    `;
+                                }).join('')}
+                        </div>
+                        <hr>
+                    `;
+                }
+                
+                questionsResults.innerHTML += resultsHtml;
+            });
+            
+            // Комментарии
+            const commentsList = document.getElementById('commentsList');
+            const comments = pollData.votes
+                .filter(v => v.comment && v.comment.trim() !== '')
+                .map(v => ({
+                    address: `${v.street}, ${v.house}`,
+                    comment: v.comment,
+                    date: new Date(v.timestamp).toLocaleDateString()
+                }));
+            
+            if (comments.length > 0) {
+                commentsList.innerHTML = comments.map(c => `
+                    <div class="border-bottom mb-3 pb-3">
+                        <div class="d-flex justify-content-between">
+                            <strong>${c.address}</strong>
+                            <small class="text-muted">${c.date}</small>
+                        </div>
+                        <p class="mb-0 mt-1">${c.comment}</p>
+                    </div>
+                `).join('');
+            } else {
+                commentsList.innerHTML = '<p class="text-muted">Пока нет комментариев</p>';
+            }
+            
+            // Строим основной график
+            buildMainChart(stats);
+        }
+        
+        // Построение основного графика
+        function buildMainChart(stats) {
+            const ctx = document.getElementById('mainChart').getContext('2d');
+            
+            // Данные для графика (средние оценки по вопросам)
+            const labels = [];
+            const data = [];
+            const colors = [];
+            
+            Object.keys(stats.averageRatings).forEach(qId => {
+                const q = stats.byQuestion[qId];
+                if (q && stats.averageRatings[qId].count > 0) {
+                    labels.push(q.text.substring(0, 30) + (q.text.length > 30 ? '...' : ''));
+                    data.push(stats.averageRatings[qId].average);
+                    
+                    // Цвет в зависимости от оценки
+                    const rating = stats.averageRatings[qId].average;
+                    if (rating >= 4) colors.push('#2ecc71'); // Зеленый
+                    else if (rating >= 3) colors.push('#f39c12'); // Оранжевый
+                    else colors.push('#e74c3c'); // Красный
+                }
+            });
+            
+            if (labels.length === 0) return;
+            
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Средняя оценка',
+                        data: data,
+                        backgroundColor: colors,
+                        borderColor: colors.map(c => c.replace('0.8', '1')),
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 5,
+                            ticks: {
+                                callback: function(value) {
+                                    return value + '/5';
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `Оценка: ${context.raw.toFixed(1)}/5`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Автоматическое обновление результатов каждые 30 секунд
+        setInterval(loadResults, 30000);
+        
+        // Загрузка при старте
+        document.addEventListener('DOMContentLoaded', function() {
+            // Устанавливаем название района
+            document.getElementById('districtName').textContent = CONFIG.district;
+            
+            // Загружаем результаты
+            loadResults();
+            
+            // Экспортируем функции для кнопок
+            window.exportData = exportData;
+            window.importData = importData;
+        });
+    </script>
+</body>
+</html>
