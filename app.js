@@ -1,13 +1,14 @@
 // === КОНФИГУРАЦИЯ FIREBASE ===
 // ЗАМЕНИТЕ ЭТИ ДАННЫЕ НА СВОИ!
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const FIREBASE_CONFIG = {
-    apiKey: "ВАШ_API_KEY",
-    authDomain: "ВАШ_ПРОЕКТ.firebaseapp.com",
-    databaseURL: "https://ВАШ_ПРОЕКТ-default-rtdb.firebaseio.com",
-    projectId: "ВАШ_ПРОЕКТ",
-    storageBucket: "ВАШ_ПРОЕКТ.appspot.com",
-    messagingSenderId: "ВАШ_NUMBER",
-    appId: "ВАШ_APP_ID"
+  apiKey: "AIzaSyBTS-0VOeGZguROG2MDbI_jk1jQZzLd3-U",
+  authDomain: "poll-hope-11.firebaseapp.com",
+  projectId: "poll-hope-11",
+  storageBucket: "poll-hope-11.firebasestorage.app",
+  messagingSenderId: "435823135667",
+  appId: "1:435823135667:web:6ba49658720ffb5d9819c6",
+  measurementId: "G-XJGQMVV4VW"
 };
 
 // === ИНИЦИАЛИЗАЦИЯ ===
