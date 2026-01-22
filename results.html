@@ -3,48 +3,39 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Результаты опроса - Заднепровский район</title>
+    <title>Результаты опроса</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        body { font-family: Arial, sans-serif; background-color: #f8f9fa; }
-        .container { max-width: 800px; }
+        body { padding: 20px; background: #f8f9fa; }
+        .card { margin-bottom: 15px; }
     </style>
 </head>
 <body>
-    <nav class="navbar navbar-dark bg-primary">
-        <div class="container">
-            <span class="navbar-brand">
-                <i class="fas fa-chart-bar"></i> Результаты опроса
-            </span>
-            <a href="index.html" class="btn btn-light">
-                <i class="fas fa-vote-yea"></i> Вернуться к голосованию
-            </a>
-        </div>
-    </nav>
-
-    <div class="container mt-4">
-        <h1 class="text-center">Результаты опроса ЖКХ</h1>
-        <h3 class="text-center text-muted">Заднепровский район</h3>
+    <div class="container">
+        <h1 class="text-center mb-4">📊 Результаты опроса ЖКХ</h1>
+        <p class="text-center text-muted">Заднепровский район</p>
         
-        <div class="text-center mt-4">
-            <div class="spinner-border text-primary" id="spinner"></div>
-            <p id="status">Подключение к базе данных...</p>
+        <div class="text-center mb-4">
+            <a href="index.html" class="btn btn-primary">← Назад к голосованию</a>
+            <button class="btn btn-success" onclick="loadData()">🔄 Обновить</button>
         </div>
         
-        <div id="results" style="display: none;">
-            <!-- Результаты появятся здесь -->
+        <div id="results">
+            <div class="text-center">
+                <div class="spinner-border text-primary"></div>
+                <p>Подключение к базе данных...</p>
+            </div>
         </div>
     </div>
 
     <script>
         // === КОНФИГУРАЦИЯ FIREBASE ===
-        // ⚠️ ВАЖНО: Используйте ПРАВИЛЬНЫЙ URL!
+        // ⚠️ ВАЖНО: Используйте firebasedatabase.app для europe-west1
         
         const FIREBASE_CONFIG = {
             apiKey: "AIzaSyA9x1ZcFgHjklmnoiT2XqPq3RzABCDEFGH",
             authDomain: "poll-hope-11.firebaseapp.com",
-            // ПРАВИЛЬНЫЙ URL для europe-west1 региона:
+            // ⚠️ ПРАВИЛЬНЫЙ URL для ЧТЕНИЯ:
             databaseURL: "https://poll-hope-11-default-rtdb.europe-west1.firebasedatabase.app",
             projectId: "poll-hope-11",
             storageBucket: "poll-hope-11.appspot.com",
@@ -52,226 +43,318 @@
             appId: "1:123456789012:web:abcdef1234567890"
         };
         
-        // === ФУНКЦИИ ===
-        
-        async function initializeApp() {
+        // === АЛЬТЕРНАТИВНЫЙ СПОСОБ ЧТЕНИЯ (через REST API) ===
+        async function loadDataViaRestAPI() {
             try {
-                updateStatus("Загрузка Firebase...");
+                const databaseURL = "https://poll-hope-11-default-rtdb.europe-west1.firebasedatabase.app";
+                const response = await fetch(`${databaseURL}/votes.json`);
                 
-                // Загружаем Firebase SDK
-                await loadScript("https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js");
-                await loadScript("https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js");
+                if (!response.ok) {
+                    throw new Error(`HTTP error: ${response.status}`);
+                }
                 
-                updateStatus("Инициализация Firebase...");
-                
-                // Инициализируем Firebase
-                firebase.initializeApp(FIREBASE_CONFIG);
-                
-                updateStatus("Подключение к базе данных...");
-                
-                // Получаем данные
-                await loadVotes();
+                const data = await response.json();
+                return data ? Object.values(data) : [];
                 
             } catch (error) {
-                console.error("Ошибка:", error);
-                updateStatus("Ошибка: " + error.message, true);
+                console.error("REST API error:", error);
+                throw error;
+            }
+        }
+        
+        // === ОСНОВНАЯ ФУНКЦИЯ ЗАГРУЗКИ ===
+        async function loadData() {
+            try {
+                document.getElementById('results').innerHTML = `
+                    <div class="text-center">
+                        <div class="spinner-border text-primary"></div>
+                        <p>Загрузка данных...</p>
+                    </div>
+                `;
+                
+                let votes = [];
+                
+                // Пробуем сначала через REST API (обходит SSL проблемы)
+                try {
+                    console.log("Попытка загрузки через REST API...");
+                    votes = await loadDataViaRestAPI();
+                    console.log("✅ Данные загружены через REST API:", votes.length);
+                    
+                } catch (restError) {
+                    console.log("REST API не сработал, пробуем Firebase SDK...");
+                    
+                    // Если REST не сработал, пробуем через Firebase SDK
+                    votes = await loadDataViaFirebaseSDK();
+                }
+                
+                // Показываем результаты
+                if (votes.length === 0) {
+                    showNoData();
+                } else {
+                    showResults(votes);
+                }
+                
+            } catch (error) {
+                console.error("Ошибка загрузки:", error);
                 showError(error);
             }
         }
         
-        async function loadVotes() {
+        async function loadDataViaFirebaseSDK() {
+            return new Promise((resolve, reject) => {
+                // Загружаем Firebase SDK если нужно
+                if (typeof firebase === 'undefined') {
+                    const script1 = document.createElement('script');
+                    script1.src = "https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js";
+                    
+                    script1.onload = () => {
+                        const script2 = document.createElement('script');
+                        script2.src = "https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js";
+                        
+                        script2.onload = () => {
+                            initializeAndLoad(resolve, reject);
+                        };
+                        
+                        script2.onerror = () => reject(new Error("Не удалось загрузить Firebase Database"));
+                        document.head.appendChild(script2);
+                    };
+                    
+                    script1.onerror = () => reject(new Error("Не удалось загрузить Firebase App"));
+                    document.head.appendChild(script1);
+                } else {
+                    initializeAndLoad(resolve, reject);
+                }
+            });
+        }
+        
+        function initializeAndLoad(resolve, reject) {
             try {
+                // Инициализируем Firebase
+                const app = firebase.initializeApp(FIREBASE_CONFIG);
                 const db = firebase.database();
                 
-                updateStatus("Загрузка голосов...");
-                
-                // Пробуем загрузить данные
-                const snapshot = await db.ref('votes').once('value');
-                const data = snapshot.val();
-                
-                if (data) {
-                    const votes = Object.values(data);
-                    updateStatus(`Загружено ${votes.length} голосов`, false);
-                    showResults(votes);
-                } else {
-                    updateStatus("Нет данных в базе", false);
-                    showNoData();
-                }
-                
+                // Загружаем данные
+                db.ref('votes').once('value')
+                    .then(snapshot => {
+                        const data = snapshot.val();
+                        resolve(data ? Object.values(data) : []);
+                    })
+                    .catch(reject);
+                    
             } catch (error) {
-                throw new Error("Не удалось загрузить данные: " + error.message);
+                reject(error);
             }
         }
         
+        // === ФУНКЦИИ ОТОБРАЖЕНИЯ ===
         function showResults(votes) {
-            // Скрываем спиннер
-            document.getElementById('spinner').style.display = 'none';
+            // Статистика
+            const totalVotes = votes.length;
             
-            // Показываем результаты
-            let html = `
-                <div class="alert alert-success">
-                    <h4>✅ Успешно подключено!</h4>
-                    <p>Загружено голосов: <strong>${votes.length}</strong></p>
-                </div>
-                
-                <div class="row mt-4">
-                    <div class="col-md-6">
-                        <div class="card">
-                            <div class="card-body">
-                                <h5>Статистика</h5>
-                                <p>Всего голосов: ${votes.length}</p>
-                                <p>Уникальных адресов: ${countUniqueAddresses(votes)}</p>
-                                <p>Средняя оценка: ${calculateAverageRating(votes).toFixed(1)}/5.0</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="card">
-                            <div class="card-body">
-                                <h5>Последние голоса</h5>
-                                ${getRecentVotes(votes)}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `;
-            
-            document.getElementById('results').innerHTML = html;
-            document.getElementById('results').style.display = 'block';
-        }
-        
-        function showNoData() {
-            document.getElementById('spinner').style.display = 'none';
-            
-            document.getElementById('results').innerHTML = `
-                <div class="alert alert-info mt-4">
-                    <h5>📭 База данных пуста</h5>
-                    <p>Пока нет ни одного голоса. Будьте первым!</p>
-                    <a href="index.html" class="btn btn-primary">Проголосовать</a>
-                </div>
-            `;
-            document.getElementById('results').style.display = 'block';
-        }
-        
-        function showError(error) {
-            document.getElementById('spinner').style.display = 'none';
-            
-            let errorMessage = error.message;
-            let solution = "";
-            
-            // Определяем тип ошибки
-            if (errorMessage.includes("CERT_COMMON_NAME_INVALID")) {
-                solution = `
-                    <p><strong>Решение:</strong> Используйте правильный URL для региона europe-west1:</p>
-                    <code>databaseURL: "https://poll-hope-11-default-rtdb.europe-west1.firebasedatabase.app"</code>
-                `;
-            } else if (errorMessage.includes("permission_denied")) {
-                solution = `<p><strong>Решение:</strong> В Firebase Console перейдите в Rules и установите:<br>
-                    <code>{ "rules": { ".read": true, ".write": true } }</code></p>`;
-            }
-            
-            document.getElementById('results').innerHTML = `
-                <div class="alert alert-danger mt-4">
-                    <h5>❌ Ошибка подключения</h5>
-                    <p>${errorMessage}</p>
-                    ${solution}
-                    <hr>
-                    <p>Текущий databaseURL: <code>${FIREBASE_CONFIG.databaseURL}</code></p>
-                    <button class="btn btn-warning mt-2" onclick="testDifferentURLs()">Протестировать другие URL</button>
-                </div>
-            `;
-            document.getElementById('results').style.display = 'block';
-        }
-        
-        // Вспомогательные функции
-        function countUniqueAddresses(votes) {
+            // Уникальные адреса
             const addresses = new Set();
             votes.forEach(v => {
                 if (v.street && v.house) {
-                    addresses.add(v.street + ', ' + v.house);
+                    addresses.add(`${v.street}, ${v.house}`);
                 }
             });
-            return addresses.size;
-        }
-        
-        function calculateAverageRating(votes) {
-            if (votes.length === 0) return 0;
             
-            let total = 0;
-            let count = 0;
+            // Средняя оценка
+            let totalRating = 0;
+            let ratingCount = 0;
             
             votes.forEach(vote => {
                 if (vote.answers && Array.isArray(vote.answers)) {
                     vote.answers.forEach(answer => {
                         const value = parseInt(answer.value);
                         if (!isNaN(value)) {
-                            total += value;
-                            count++;
+                            totalRating += value;
+                            ratingCount++;
                         }
                     });
                 }
             });
             
-            return count > 0 ? total / count : 0;
-        }
-        
-        function getRecentVotes(votes) {
-            const recent = votes
-                .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
-                .slice(0, 5);
+            const avgRating = ratingCount > 0 ? (totalRating / ratingCount).toFixed(1) : "0.0";
             
-            if (recent.length === 0) return "<p>Нет голосов</p>";
-            
-            return recent.map(v => `
-                <div class="border-bottom py-2">
-                    <small>${new Date(v.timestamp).toLocaleTimeString('ru-RU')}</small><br>
-                    <strong>${v.street}, ${v.house}</strong>
+            // HTML
+            let html = `
+                <div class="alert alert-success">
+                    <h4><i class="fas fa-check-circle"></i> Данные успешно загружены!</h4>
+                    <p>Загружено <strong>${totalVotes}</strong> голосов из облачной базы</p>
                 </div>
-            `).join('');
-        }
-        
-        function updateStatus(message, showSpinner = true) {
-            document.getElementById('status').textContent = message;
-            document.getElementById('spinner').style.display = showSpinner ? 'block' : 'none';
-        }
-        
-        function loadScript(src) {
-            return new Promise((resolve, reject) => {
-                const script = document.createElement('script');
-                script.src = src;
-                script.onload = resolve;
-                script.onerror = reject;
-                document.head.appendChild(script);
+                
+                <div class="row mb-4">
+                    <div class="col-md-3">
+                        <div class="card bg-primary text-white">
+                            <div class="card-body text-center">
+                                <h2 class="mb-0">${totalVotes}</h2>
+                                <p class="mb-0">Всего голосов</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-success text-white">
+                            <div class="card-body text-center">
+                                <h2 class="mb-0">${addresses.size}</h2>
+                                <p class="mb-0">Уникальных адресов</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-info text-white">
+                            <div class="card-body text-center">
+                                <h2 class="mb-0">${avgRating}</h2>
+                                <p class="mb-0">Средняя оценка</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-warning text-white">
+                            <div class="card-body text-center">
+                                <h2 class="mb-0">${new Date().toLocaleTimeString('ru-RU', {hour: '2-digit', minute:'2-digit'})}</h2>
+                                <p class="mb-0">Обновлено</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <h4>Последние голоса:</h4>
+                <div class="list-group mb-4">
+            `;
+            
+            // Последние голоса
+            const recentVotes = votes
+                .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+                .slice(0, 15);
+            
+            recentVotes.forEach(vote => {
+                const time = new Date(vote.timestamp).toLocaleTimeString('ru-RU');
+                const date = new Date(vote.timestamp).toLocaleDateString('ru-RU');
+                
+                html += `
+                    <div class="list-group-item">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1"><i class="fas fa-home"></i> ${vote.street}, ${vote.house}</h6>
+                            <small>${date} ${time}</small>
+                        </div>
+                        <div class="mt-2">
+                            <small class="text-muted">Ответы:</small>
+                            <div class="d-flex gap-2">
+                `;
+                
+                if (vote.answers && Array.isArray(vote.answers)) {
+                    vote.answers.forEach((answer, idx) => {
+                        const value = parseInt(answer.value);
+                        let color = "danger";
+                        if (value >= 4) color = "success";
+                        else if (value >= 3) color = "warning";
+                        
+                        html += `<span class="badge bg-${color}">${value}</span>`;
+                    });
+                }
+                
+                if (vote.comment) {
+                    html += `</div><p class="mt-2 mb-1"><small>💬 ${vote.comment}</small></p>`;
+                }
+                
+                html += `</div></div>`;
             });
-        }
-        
-        // Тестирование разных URL
-        function testDifferentURLs() {
-            const urls = [
-                "https://poll-hope-11-default-rtdb.firebaseio.com",
-                "https://poll-hope-11-default-rtdb.firebaseio.com/",
-                "https://poll-hope-11-default-rtdb.europe-west1.firebasedatabase.app",
-                "https://poll-hope-11-default-rtdb.europe-west1.firebasedatabase.app/"
-            ];
             
-            let testResults = "<h6>Результаты тестирования:</h6>";
+            html += `</div>`;
             
-            urls.forEach(url => {
-                testResults += `<div class="mb-2"><code>${url}</code> - тестирование...</div>`;
+            // Распределение по улицам
+            const streetStats = {};
+            votes.forEach(v => {
+                if (v.street) {
+                    streetStats[v.street] = (streetStats[v.street] || 0) + 1;
+                }
             });
             
-            document.getElementById('results').innerHTML += `
-                <div class="mt-4">
-                    ${testResults}
-                    <p class="text-muted">Проверьте консоль (F12) для деталей</p>
+            if (Object.keys(streetStats).length > 0) {
+                html += `<h4>Распределение по улицам:</h4><ul class="list-group">`;
+                
+                Object.entries(streetStats)
+                    .sort((a, b) => b[1] - a[1])
+                    .forEach(([street, count]) => {
+                        html += `
+                            <li class="list-group-item d-flex justify-content-between">
+                                <span>${street}</span>
+                                <span class="badge bg-primary">${count}</span>
+                            </li>
+                        `;
+                    });
+                
+                html += `</ul>`;
+            }
+            
+            document.getElementById('results').innerHTML = html;
+        }
+        
+        function showNoData() {
+            document.getElementById('results').innerHTML = `
+                <div class="alert alert-info text-center">
+                    <h4><i class="fas fa-database"></i> База данных пуста</h4>
+                    <p class="mb-3">В облачной базе пока нет голосов.</p>
+                    <a href="index.html" class="btn btn-primary">Стать первым участником</a>
+                </div>
+            `;
+        }
+        
+        function showError(error) {
+            let errorHtml = `
+                <div class="alert alert-danger">
+                    <h4><i class="fas fa-exclamation-triangle"></i> Ошибка загрузки</h4>
+                    <p>${error.message || "Неизвестная ошибка"}</p>
+                    
+                    <h5 class="mt-3">Возможные решения:</h5>
+                    <ol>
+                        <li><strong>Проверьте URL базы данных:</strong><br>
+                            <code>${FIREBASE_CONFIG.databaseURL}</code></li>
+                        <li><strong>Проверьте правила доступа в Firebase Console:</strong><br>
+                            Правила должны быть: <code>{ "rules": { ".read": true, ".write": true } }</code></li>
+                        <li><strong>Попробуйте другой браузер</strong> или отключите блокировщики рекламы</li>
+                    </ol>
+                    
+                    <div class="mt-3">
+                        <button class="btn btn-warning" onclick="testConnection()">Проверить подключение</button>
+                        <button class="btn btn-secondary" onclick="location.reload()">Перезагрузить страницу</button>
+                    </div>
                 </div>
             `;
             
-            // Можно добавить реальное тестирование каждого URL
+            document.getElementById('results').innerHTML = errorHtml;
         }
         
-        // Запуск при загрузке
-        document.addEventListener('DOMContentLoaded', initializeApp);
+        // Тест подключения
+        async function testConnection() {
+            try {
+                const testUrl = FIREBASE_CONFIG.databaseURL.replace('firebasedatabase.app', 'firebaseio.com') + '/.json';
+                const response = await fetch(testUrl);
+                
+                if (response.ok) {
+                    alert("✅ Подключение к Firebase работает!");
+                } else {
+                    alert("⚠️ Ошибка подключения. Проверьте URL базы данных.");
+                }
+            } catch (error) {
+                alert("❌ Не удалось подключиться к Firebase.");
+            }
+        }
+        
+        // Автозагрузка при открытии
+        document.addEventListener('DOMContentLoaded', loadData);
+        
+        // Автообновление каждые 30 секунд
+        setInterval(() => {
+            const isVisible = document.visibilityState === 'visible';
+            if (isVisible) {
+                loadData();
+            }
+        }, 30000);
     </script>
+    
+    <!-- Иконки FontAwesome -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/js/all.min.js"></script>
 </body>
 </html>
