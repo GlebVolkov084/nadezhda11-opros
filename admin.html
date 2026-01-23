@@ -3,505 +3,839 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Админ-панель - Опрос ЖКХ</title>
+    <title>Результаты опроса</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body { padding: 20px; background: linear-gradient(135deg, #f5f7fa 0%, #e4edf5 100%); }
+        
+        /* Стили для карточек статистики */
+        .stat-card {
+            border: none;
+            border-radius: 15px;
+            transition: all 0.3s ease;
+            height: 100%;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+        
+        .stat-icon {
+            font-size: 2.5rem;
+            opacity: 0.9;
+        }
+        
+        .stat-number {
+            font-size: 2.2rem;
+            font-weight: 700;
+            margin: 10px 0;
+        }
+        
+        .stat-label {
+            font-size: 0.9rem;
+            color: #ffffff;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        /* Стили для диаграмм */
+        .chart-container {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            margin-bottom: 20px;
+        }
+        
+        .progress-container {
+            margin: 15px 0;
+        }
+        
+        .progress-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+        }
+        
+        .rating-count {
+            font-size: 0.85rem;
+            color: #6c757d;
+        }
+        
+        /* Цвета для оценок */
+        .rating-1 { background: linear-gradient(90deg, #dc3545, #e76b77); }
+        .rating-2 { background: linear-gradient(90deg, #fd7e14, #ff9e50); }
+        .rating-3 { background: linear-gradient(90deg, #ffc107, #ffd55a); }
+        .rating-4 { background: linear-gradient(90deg, #20c997, #4cd9b1); }
+        .rating-5 { background: linear-gradient(90deg, #198754, #28a745); }
+        
+        /* Стили для последних голосов */
+        .vote-card {
+            border: 1px solid #e9ecef;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            transition: all 0.3s ease;
+            background: white;
+        }
+        
+        .vote-card:hover {
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .vote-street {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        
+        .vote-time {
+            font-size: 0.85rem;
+            color: #6c757d;
+        }
+        
+        /* Адаптивные стили */
+        @media (max-width: 768px) {
+            .stat-number { font-size: 1.8rem; }
+            .stat-icon { font-size: 2rem; }
+        }
+    </style>
 </head>
 <body>
-    <!-- Навигация -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
-        <div class="container">
-            <a class="navbar-brand" href="#">
-                <i class="fas fa-user-shield me-2"></i>Админ-панель
-            </a>
-            <div class="navbar-nav">
-                <a class="nav-link" href="index.html"><i class="fas fa-vote-yea"></i> Голосовать</a>
-                <a class="nav-link" href="results.html"><i class="fas fa-chart-bar"></i> Результаты</a>
-                <a class="nav-link active" href="admin.html" style="color: #ffcc00;"><i class="fas fa-user-shield"></i> Админ</a>
-            </div>
-        </div>
-    </nav>
-
-    <!-- Главный контейнер -->
-    <div class="container mt-4">
-        <!-- Заголовок -->
-        <div class="text-center mb-5">
-            <h1 class="display-5"><i class="fas fa-user-shield text-warning"></i> Панель администратора</h1>
-            <h3 class="text-muted">Опрос качества ЖКХ: <span class="text-primary" id="districtName">[Ваш район]</span></h3>
-            <p class="lead">Управление данными и настройки опроса</p>
-        </div>
-
-        <!-- Защита паролем -->
-        <div class="row" id="passwordSection">
-            <div class="col-md-6 mx-auto">
-                <div class="card">
-                    <div class="card-header bg-warning">
-                        <h5 class="mb-0"><i class="fas fa-lock"></i> Вход в админ-панель</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="mb-3">
-                            <label class="form-label">Пароль администратора</label>
-                            <input type="password" class="form-control" id="adminPassword" 
-                                   placeholder="Введите пароль" value="admin123">
-                        </div>
-                        <button class="btn btn-warning w-100" onclick="checkPassword()">
-                            <i class="fas fa-sign-in-alt"></i> Войти
-                        </button>
-                        <div class="mt-3">
-                            <small class="text-muted">По умолчанию пароль: <code>admin123</code></small>
-                        </div>
-                    </div>
-                </div>
+    <div class="container">
+        <!-- Шапка -->
+        <div class="text-center mb-5 fade-in">
+            <h1 class="display-5 text-primary mb-3">
+                <i class="fas fa-chart-pie me-2"></i>Результаты опроса ЖКХ
+            </h1>
+            <p class="lead text-muted">Общая статистика по району на основе голосов жителей</p>
+            <div class="d-flex justify-content-center gap-3 mt-4">
+                <a href="index.html" class="btn btn-primary">
+                    <i class="fas fa-vote-yea me-2"></i>Проголосовать
+                </a>
+                <button class="btn btn-outline-primary" onclick="loadData()">
+                    <i class="fas fa-sync-alt me-2"></i>Обновить данные
+                </button>
+                <a href="admin.html" class="btn btn-outline-secondary">
+                    <i class="fas fa-user-shield me-2"></i>Админ-панель
+                </a>
             </div>
         </div>
 
-        <!-- Основной контент (скрыт до ввода пароля) -->
-        <div id="adminContent" style="display: none;">
-            <!-- Статистика -->
-            <div class="row mb-4">
-                <div class="col-12">
-                    <div class="card">
-                        <div class="card-header bg-primary text-white">
-                            <h5 class="mb-0"><i class="fas fa-chart-bar"></i> Быстрая статистика</h5>
-                        </div>
-                        <div class="card-body">
-                            <div class="row text-center">
-                                <div class="col-md-3">
-                                    <h2 id="adminTotalVotes">0</h2>
-                                    <p class="text-muted">Всего голосов</p>
-                                </div>
-                                <div class="col-md-3">
-                                    <h2 id="adminUniqueAddresses">0</h2>
-                                    <p class="text-muted">Уникальных адресов</p>
-                                </div>
-                                <div class="col-md-3">
-                                    <h2 id="adminLastVote">-</h2>
-                                    <p class="text-muted">Последний голос</p>
-                                </div>
-                                <div class="col-md-3">
-                                    <h2 id="adminDataSize">0 KB</h2>
-                                    <p class="text-muted">Размер данных</p>
-                                </div>
+        <!-- Контейнер для результатов -->
+        <div id="results">
+            <div class="text-center py-5">
+                <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;"></div>
+                <p class="mt-3">Подключение к базе данных и загрузка статистики...</p>
+            </div>
+        </div>
+
+        <!-- Шаблон для результатов (скрыт по умолчанию) -->
+        <div id="resultsTemplate" style="display: none;">
+            <!-- Статистика вверху -->
+            <div class="row mb-4 fade-in">
+                <div class="col-md-3 mb-3">
+                    <div class="stat-card bg-primary text-white">
+                        <div class="card-body text-center">
+                            <div class="stat-icon mb-2">
+                                <i class="fas fa-users"></i>
                             </div>
+                            <div class="stat-number" id="totalVotesStat">0</div>
+                            <div class="stat-label">Всего голосов</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-3 mb-3">
+                    <div class="stat-card bg-success text-white">
+                        <div class="card-body text-center">
+                            <div class="stat-icon mb-2">
+                                <i class="fas fa-home"></i>
+                            </div>
+                            <div class="stat-number" id="uniqueAddresses">0</div>
+                            <div class="stat-label">Уникальных адресов</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-3 mb-3">
+                    <div class="stat-card bg-info text-white">
+                        <div class="card-body text-center">
+                            <div class="stat-icon mb-2">
+                                <i class="fas fa-star-half-alt"></i>
+                            </div>
+                            <div class="stat-number" id="averageRating">0.0</div>
+                            <div class="stat-label">Средняя оценка</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-3 mb-3">
+                    <div class="stat-card bg-warning text-white">
+                        <div class="card-body text-center">
+                            <div class="stat-icon mb-2">
+                                <i class="fas fa-calendar-check"></i>
+                            </div>
+                            <div class="stat-number" id="todayVotes">0</div>
+                            <div class="stat-label">Голосов сегодня</div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Управление данными -->
-            <div class="row mb-4">
+            <!-- Распределение оценок -->
+            <div class="chart-container fade-in">
+                <h4 class="mb-4">
+                    <i class="fas fa-chart-bar text-primary me-2"></i>Распределение оценок
+                </h4>
+                <div id="ratingsDistribution">
+                    <!-- Динамически заполнится -->
+                </div>
+            </div>
+
+            <!-- Самые проблемные вопросы -->
+            <div class="row fade-in">
                 <div class="col-md-6">
-                    <div class="card h-100">
-                        <div class="card-header bg-success text-white">
-                            <h5 class="mb-0"><i class="fas fa-database"></i> Экспорт данных</h5>
-                        </div>
-                        <div class="card-body">
-                            <p>Скачайте все данные голосования в формате JSON:</p>
-                            <button class="btn btn-success w-100 mb-2" onclick="exportData()">
-                                <i class="fas fa-download"></i> Скачать все данные
-                            </button>
-                            <button class="btn btn-outline-success w-100" onclick="exportFiltered()">
-                                <i class="fas fa-filter"></i> Скачать за последнюю неделю
-                            </button>
-                            <div class="mt-3">
-                                <small class="text-muted">Файл содержит все голоса с адресами, ответами и комментариями.</small>
-                            </div>
+                    <div class="chart-container">
+                        <h4 class="mb-4">
+                            <i class="fas fa-exclamation-triangle text-warning me-2"></i>Самые проблемные вопросы
+                        </h4>
+                        <div id="problemQuestions">
+                            <!-- Динамически заполнится -->
                         </div>
                     </div>
                 </div>
                 
                 <div class="col-md-6">
-                    <div class="card h-100">
-                        <div class="card-header bg-info text-white">
-                            <h5 class="mb-0"><i class="fas fa-upload"></i> Импорт и объединение</h5>
-                        </div>
-                        <div class="card-body">
-                            <p>Загрузите данные от других пользователей:</p>
-                            <div class="mb-3">
-                                <label class="btn btn-info w-100">
-                                    <i class="fas fa-file-upload"></i> Выбрать JSON файлы
-                                    <input type="file" id="mergeFiles" multiple accept=".json" style="display: none;" 
-                                           onchange="handleMergeFiles(event)">
-                                </label>
-                            </div>
-                            <button class="btn btn-outline-info w-100" onclick="mergeSelectedFiles()" id="mergeBtn" disabled>
-                                <i class="fas fa-blend"></i> Объединить выбранные файлы
-                            </button>
-                            <div class="mt-3">
-                                <small class="text-muted">Выбрано файлов: <span id="fileCount">0</span></small>
-                            </div>
+                    <div class="chart-container">
+                        <h4 class="mb-4">
+                            <i class="fas fa-thumbs-up text-success me-2"></i>Лучшие показатели
+                        </h4>
+                        <div id="bestQuestions">
+                            <!-- Динамически заполнится -->
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Очистка и сброс -->
-            <div class="row mb-4">
-                <div class="col-12">
-                    <div class="card">
-                        <div class="card-header bg-danger text-white">
-                            <h5 class="mb-0"><i class="fas fa-trash-alt"></i> Опасные операции</h5>
-                        </div>
-                        <div class="card-body">
-                            <div class="row">
-                                <div class="col-md-4">
-                                    <button class="btn btn-outline-danger w-100 mb-2" 
-                                            onclick="clearOldVotes()">
-                                        <i class="fas fa-calendar-times"></i> Удалить старые голосы
-                                    </button>
-                                    <small class="text-muted">Удалить голосы старше 30 дней</small>
-                                </div>
-                                <div class="col-md-4">
-                                    <button class="btn btn-outline-danger w-100 mb-2" 
-                                            onclick="removeDuplicates()">
-                                        <i class="fas fa-copy"></i> Удалить дубликаты
-                                    </button>
-                                    <small class="text-muted">Удалить повторные голоса с одного адреса</small>
-                                </div>
-                                <div class="col-md-4">
-                                    <button class="btn btn-danger w-100" 
-                                            onclick="if(confirm('ВНИМАНИЕ! Это удалит ВСЕ данные. Продолжить?')) { clearAllData(); }">
-                                        <i class="fas fa-bomb"></i> Очистить ВСЕ данные
-                                    </button>
-                                    <small class="text-muted">Полная очистка базы данных</small>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+            <!-- Последние голоса -->
+            <div class="chart-container fade-in">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h4 class="mb-0">
+                        <i class="fas fa-history text-info me-2"></i>Последние голоса
+                    </h4>
+                    <span class="badge bg-primary" id="recentVotesCount">0</span>
+                </div>
+                <div id="recentVotes">
+                    <!-- Динамически заполнится -->
                 </div>
             </div>
 
-            <!-- Настройки -->
-            <div class="row">
-                <div class="col-12">
-                    <div class="card">
-                        <div class="card-header bg-warning text-dark">
-                            <h5 class="mb-0"><i class="fas fa-cog"></i> Настройки опроса</h5>
-                        </div>
-                        <div class="card-body">
-                            <div class="mb-3">
-                                <label class="form-label">Название района</label>
-                                <input type="text" class="form-control" id="districtInput" 
-                                       value="Ваш район">
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label">Пароль администратора</label>
-                                <input type="password" class="form-control" id="newPassword" 
-                                       placeholder="Новый пароль">
-                            </div>
-                            <button class="btn btn-warning" onclick="saveSettings()">
-                                <i class="fas fa-save"></i> Сохранить настройки
-                            </button>
-                        </div>
-                    </div>
+            <!-- Топ улиц -->
+            <div class="chart-container fade-in">
+                <h4 class="mb-4">
+                    <i class="fas fa-map-marker-alt text-danger me-2"></i>Активность по улицам
+                </h4>
+                <div id="topStreets">
+                    <!-- Динамически заполнится -->
                 </div>
             </div>
 
-            <!-- Информация -->
-            <div class="row mt-4">
-                <div class="col-12">
-                    <div class="card">
-                        <div class="card-header bg-secondary text-white">
-                            <h5 class="mb-0"><i class="fas fa-info-circle"></i> Информация для администратора</h5>
-                        </div>
-                        <div class="card-body">
-                            <h6>Как собирать общую статистику:</h6>
-                            <ol>
-                                <li>Попросите каждого участника экспортировать данные (results.html → Экспорт)</li>
-                                <li>Соберите все JSON файлы</li>
-                                <li>Загрузите их здесь через "Импорт и объединение"</li>
-                                <li>Экспортируйте объединенные данные</li>
-                            </ol>
-                            
-                            <h6>Безопасность:</h6>
-                            <ul>
-                                <li>Поменяйте пароль по умолчанию</li>
-                                <li>Регулярно экспортируйте данные для резервного копирования</li>
-                                <li>Не делитесь паролем администратора</li>
-                            </ul>
-                            
-                            <div class="alert alert-info">
-                                <i class="fas fa-lightbulb"></i>
-                                <strong>Совет:</strong> Для массового сбора данных создайте группу в мессенджере 
-                                и попросите всех присылать JSON файлы после голосования.
-                            </div>
-                        </div>
-                    </div>
+            <!-- Временная активность -->
+            <div class="chart-container fade-in">
+                <h4 class="mb-4">
+                    <i class="fas fa-clock text-secondary me-2"></i>Активность за неделю
+                </h4>
+                <div id="weeklyActivity">
+                    <p class="text-muted">Данные за последние 7 дней</p>
                 </div>
             </div>
+        </div>
+
+        <!-- Кнопка скачивания данных -->
+        <div class="text-center mt-5 mb-4">
+            <button class="btn btn-outline-success" onclick="exportAllData()">
+                <i class="fas fa-download me-2"></i>Скачать полную статистику (JSON)
+            </button>
+            <p class="text-muted small mt-2">
+                <i class="fas fa-info-circle"></i> Данные обновляются в реальном времени
+            </p>
         </div>
     </div>
 
-    <!-- Подвал -->
-    <footer class="footer mt-5 py-4 bg-dark text-white">
-        <div class="container text-center">
-            <p>© 2024 Совет жителей района. Административная панель.</p>
-            <p class="small">
-                <i class="fas fa-shield-alt"></i> Доступ только для администраторов
-            </p>
-        </div>
-    </footer>
-
     <!-- Скрипты -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="app.js"></script>
     <script>
-        let filesToMerge = [];
+        // === КОНФИГУРАЦИЯ FIREBASE ===
+        const FIREBASE_CONFIG = {
+            apiKey: "AIzaSyA9x1ZcFgHjklmnoiT2XqPq3RzABCDEFGH",
+            authDomain: "poll-hope-11.firebaseapp.com",
+            databaseURL: "https://poll-hope-11-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "poll-hope-11",
+            storageBucket: "poll-hope-11.appspot.com",
+            messagingSenderId: "123456789012",
+            appId: "1:123456789012:web:abcdef1234567890"
+        };
         
-        // Проверка пароля
-        function checkPassword() {
-            const password = document.getElementById('adminPassword').value;
-            const defaultPassword = 'admin123';
-            
-            if (password === defaultPassword) {
-                document.getElementById('passwordSection').style.display = 'none';
-                document.getElementById('adminContent').style.display = 'block';
-                loadAdminStats();
-            } else {
-                alert('Неверный пароль!');
+        let allVotes = [];
+
+        // === ОСНОВНАЯ ФУНКЦИЯ ЗАГРУЗКИ ===
+        async function loadData() {
+            try {
+                document.getElementById('results').innerHTML = `
+                    <div class="text-center py-5">
+                        <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;"></div>
+                        <p class="mt-3">Загрузка и анализ данных...</p>
+                    </div>
+                `;
+                
+                const votes = await fetchData();
+                allVotes = votes;
+                
+                if (votes.length === 0) {
+                    showNoData();
+                } else {
+                    analyzeAndDisplayData(votes);
+                }
+                
+            } catch (error) {
+                console.error("Ошибка загрузки:", error);
+                showError(error);
             }
         }
-        
-        // Загрузка статистики для админа
-        function loadAdminStats() {
-            const data = getPollData();
-            if (!data) return;
+
+        async function fetchData() {
+            try {
+                const databaseURL = "https://poll-hope-11-default-rtdb.europe-west1.firebasedatabase.app";
+                const response = await fetch(`${databaseURL}/votes.json`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                return data ? Object.values(data) : [];
+                
+            } catch (error) {
+                console.error("Ошибка REST API:", error);
+                throw error;
+            }
+        }
+
+        // === АНАЛИЗ ДАННЫХ ===
+        function analyzeAndDisplayData(votes) {
+            // 1. Основная статистика
+            const stats = calculateBasicStats(votes);
             
-            document.getElementById('adminTotalVotes').textContent = data.votes.length;
+            // 2. Распределение оценок
+            const ratingDistribution = calculateRatingDistribution(votes);
+            
+            // 3. Анализ по вопросам
+            const questionStats = analyzeQuestions(votes);
+            
+            // 4. Последние голоса
+            const recentVotes = getRecentVotes(votes, 10);
+            
+            // 5. Топ улиц
+            const topStreets = getTopStreets(votes, 8);
+            
+            // 6. Временная активность
+            const weeklyActivity = getWeeklyActivity(votes);
+            
+            // Отображаем все данные
+            displayAllStats(stats, ratingDistribution, questionStats, recentVotes, topStreets, weeklyActivity);
+        }
+
+        function calculateBasicStats(votes) {
+            const totalVotes = votes.length;
             
             // Уникальные адреса
-            const uniqueAddresses = new Set();
-            data.votes.forEach(vote => {
-                uniqueAddresses.add(`${vote.street}, ${vote.house}`);
+            const addresses = new Set();
+            votes.forEach(v => {
+                if (v.street && v.house) {
+                    addresses.add(`${v.street}, ${v.house}`);
+                }
             });
-            document.getElementById('adminUniqueAddresses').textContent = uniqueAddresses.size;
             
-            // Последний голос
-            if (data.lastVote) {
-                const lastDate = new Date(data.lastVote);
-                document.getElementById('adminLastVote').textContent = 
-                    lastDate.toLocaleDateString('ru-RU');
+            // Средняя оценка
+            let totalRating = 0;
+            let ratingCount = 0;
+            
+            votes.forEach(vote => {
+                if (vote.answers && Array.isArray(vote.answers)) {
+                    vote.answers.forEach(answer => {
+                        const value = parseInt(answer.value);
+                        if (!isNaN(value)) {
+                            totalRating += value;
+                            ratingCount++;
+                        }
+                    });
+                }
+            });
+            
+            // Голоса сегодня
+            const today = new Date().toDateString();
+            const todayVotes = votes.filter(v => {
+                const voteDate = new Date(v.timestamp).toDateString();
+                return voteDate === today;
+            }).length;
+            
+            return {
+                totalVotes,
+                uniqueAddresses: addresses.size,
+                averageRating: ratingCount > 0 ? (totalRating / ratingCount).toFixed(1) : "0.0",
+                todayVotes,
+                totalRatingCount: ratingCount
+            };
+        }
+
+        function calculateRatingDistribution(votes) {
+            const distribution = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0};
+            let totalRatings = 0;
+            
+            votes.forEach(vote => {
+                if (vote.answers && Array.isArray(vote.answers)) {
+                    vote.answers.forEach(answer => {
+                        const value = parseInt(answer.value);
+                        if (!isNaN(value) && value >= 1 && value <= 5) {
+                            distribution[value]++;
+                            totalRatings++;
+                        }
+                    });
+                }
+            });
+            
+            // Преобразуем в проценты
+            const distributionPercent = {};
+            for (let i = 1; i <= 5; i++) {
+                distributionPercent[i] = totalRatings > 0 ? 
+                    ((distribution[i] / totalRatings) * 100).toFixed(1) : 0;
             }
             
-            // Размер данных
-            const jsonString = JSON.stringify(data);
-            const sizeInKB = (jsonString.length / 1024).toFixed(2);
-            document.getElementById('adminDataSize').textContent = sizeInKB + ' KB';
-            
-            // Название района
-            document.getElementById('districtInput').value = CONFIG.district;
+            return {
+                counts: distribution,
+                percentages: distributionPercent,
+                totalRatings
+            };
         }
-        
-        // Экспорт отфильтрованных данных
-        function exportFiltered() {
-            const data = getPollData();
-            if (!data) return;
+
+        function analyzeQuestions(votes) {
+            const questions = {};
             
-            // Фильтруем голоса за последнюю неделю
-            const weekAgo = new Date();
-            weekAgo.setDate(weekAgo.getDate() - 7);
+            // Инициализируем структуру для вопросов
+            for (let i = 1; i <= 5; i++) {
+                questions[i] = {
+                    total: 0,
+                    sum: 0,
+                    average: 0,
+                    distribution: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0}
+                };
+            }
             
-            const filteredVotes = data.votes.filter(vote => {
-                const voteDate = new Date(vote.timestamp);
-                return voteDate > weekAgo;
+            // Собираем статистику
+            votes.forEach(vote => {
+                if (vote.answers && Array.isArray(vote.answers)) {
+                    vote.answers.forEach(answer => {
+                        const questionId = answer.questionId;
+                        const value = parseInt(answer.value);
+                        
+                        if (questions[questionId] && !isNaN(value)) {
+                            questions[questionId].total++;
+                            questions[questionId].sum += value;
+                            questions[questionId].distribution[value]++;
+                        }
+                    });
+                }
             });
             
-            const filteredData = {
-                ...data,
-                votes: filteredVotes,
-                totalVotes: filteredVotes.length,
-                note: 'Данные за последнюю неделю'
+            // Рассчитываем средние
+            Object.keys(questions).forEach(id => {
+                const q = questions[id];
+                q.average = q.total > 0 ? (q.sum / q.total).toFixed(1) : 0;
+            });
+            
+            // Сортируем по средней оценке (от низкой к высокой)
+            const sortedQuestions = Object.entries(questions)
+                .sort((a, b) => parseFloat(a[1].average) - parseFloat(b[1].average));
+            
+            return {
+                worst: sortedQuestions.slice(0, 3), // 3 самых проблемных
+                best: sortedQuestions.slice(-3).reverse(), // 3 лучших
+                all: questions
+            };
+        }
+
+        function getRecentVotes(votes, limit = 10) {
+            return votes
+                .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+                .slice(0, limit);
+        }
+
+        function getTopStreets(votes, limit = 8) {
+            const streetStats = {};
+            
+            votes.forEach(v => {
+                if (v.street) {
+                    streetStats[v.street] = (streetStats[v.street] || 0) + 1;
+                }
+            });
+            
+            return Object.entries(streetStats)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, limit);
+        }
+
+        function getWeeklyActivity(votes) {
+            const last7Days = [];
+            const activity = {};
+            
+            // Создаем массив последних 7 дней
+            for (let i = 6; i >= 0; i--) {
+                const date = new Date();
+                date.setDate(date.getDate() - i);
+                const dateStr = date.toLocaleDateString('ru-RU', { 
+                    weekday: 'short', 
+                    month: 'short', 
+                    day: 'numeric' 
+                });
+                last7Days.push(dateStr);
+                activity[dateStr] = 0;
+            }
+            
+            // Считаем голоса за каждый день
+            votes.forEach(vote => {
+                const voteDate = new Date(vote.timestamp);
+                const dateStr = voteDate.toLocaleDateString('ru-RU', { 
+                    weekday: 'short', 
+                    month: 'short', 
+                    day: 'numeric' 
+                });
+                
+                if (activity[dateStr] !== undefined) {
+                    activity[dateStr]++;
+                }
+            });
+            
+            return {
+                labels: last7Days,
+                values: last7Days.map(date => activity[date] || 0)
+            };
+        }
+
+        // === ОТОБРАЖЕНИЕ ДАННЫХ ===
+        function displayAllStats(stats, ratingDistribution, questionStats, recentVotes, topStreets, weeklyActivity) {
+            const template = document.getElementById('resultsTemplate').innerHTML;
+            document.getElementById('results').innerHTML = template;
+            
+            // 1. Основные показатели
+            document.getElementById('totalVotesStat').textContent = stats.totalVotes;
+            document.getElementById('uniqueAddresses').textContent = stats.uniqueAddresses;
+            document.getElementById('averageRating').textContent = stats.averageRating;
+            document.getElementById('todayVotes').textContent = stats.todayVotes;
+            
+            // 2. Распределение оценок
+            displayRatingDistribution(ratingDistribution);
+            
+            // 3. Вопросы
+            displayQuestionStats(questionStats);
+            
+            // 4. Последние голоса
+            displayRecentVotes(recentVotes);
+            
+            // 5. Топ улиц
+            displayTopStreets(topStreets);
+            
+            // 6. Активность
+            displayWeeklyActivity(weeklyActivity);
+            
+            // Добавляем анимацию
+            animateStats();
+        }
+
+        function displayRatingDistribution(distribution) {
+            const container = document.getElementById('ratingsDistribution');
+            let html = '<div class="row">';
+            
+            for (let rating = 5; rating >= 1; rating--) {
+                const percentage = distribution.percentages[rating];
+                const count = distribution.counts[rating];
+                
+                html += `
+                    <div class="col-md-12 mb-3">
+                        <div class="progress-label">
+                            <span>
+                                <strong>${rating} ⭐</strong>
+                                <span class="rating-count ms-2">${count} оценок</span>
+                            </span>
+                            <span><strong>${percentage}%</strong></span>
+                        </div>
+                        <div class="progress" style="height: 20px;">
+                            <div class="progress-bar rating-${rating}" 
+                                 role="progressbar" 
+                                 style="width: ${percentage}%"
+                                 aria-valuenow="${percentage}" 
+                                 aria-valuemin="0" 
+                                 aria-valuemax="100">
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        function displayQuestionStats(questionStats) {
+            // Самые проблемные вопросы
+            const problemsContainer = document.getElementById('problemQuestions');
+            let problemsHtml = '';
+            
+            questionStats.worst.forEach(([id, data]) => {
+                const questionText = getQuestionText(id);
+                problemsHtml += `
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span class="small">${questionText}</span>
+                            <span class="badge bg-warning">${data.average}/5</span>
+                        </div>
+                        <div class="progress" style="height: 10px;">
+                            <div class="progress-bar bg-warning" style="width: ${data.average * 20}%"></div>
+                        </div>
+                    </div>
+                `;
+            });
+            problemsContainer.innerHTML = problemsHtml;
+            
+            // Лучшие вопросы
+            const bestContainer = document.getElementById('bestQuestions');
+            let bestHtml = '';
+            
+            questionStats.best.forEach(([id, data]) => {
+                const questionText = getQuestionText(id);
+                bestHtml += `
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span class="small">${questionText}</span>
+                            <span class="badge bg-success">${data.average}/5</span>
+                        </div>
+                        <div class="progress" style="height: 10px;">
+                            <div class="progress-bar bg-success" style="width: ${data.average * 20}%"></div>
+                        </div>
+                    </div>
+                `;
+            });
+            bestContainer.innerHTML = bestHtml;
+        }
+
+        function getQuestionText(id) {
+            const questions = {
+                1: "Уборка подъездов",
+                2: "Вывоз мусора",
+                3: "Состояние лифтов",
+                4: "Уборка двора",
+                5: "Освещение"
+            };
+            return questions[id] || `Вопрос ${id}`;
+        }
+
+        function displayRecentVotes(votes) {
+            const container = document.getElementById('recentVotes');
+            document.getElementById('recentVotesCount').textContent = votes.length;
+            
+            if (votes.length === 0) {
+                container.innerHTML = '<p class="text-muted">Нет данных о голосах</p>';
+                return;
+            }
+            
+            let html = '';
+            votes.forEach(vote => {
+                const time = new Date(vote.timestamp).toLocaleTimeString('ru-RU', { 
+                    hour: '2-digit', 
+                    minute: '2-digit' 
+                });
+                const date = new Date(vote.timestamp).toLocaleDateString('ru-RU');
+                
+                // Считаем среднюю оценку для этого голоса
+                let avgRating = 0;
+                if (vote.answers && vote.answers.length > 0) {
+                    const sum = vote.answers.reduce((acc, ans) => acc + parseInt(ans.value), 0);
+                    avgRating = (sum / vote.answers.length).toFixed(1);
+                }
+                
+                html += `
+                    <div class="vote-card p-3">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <div>
+                                <span class="vote-street">
+                                    <i class="fas fa-home text-primary me-2"></i>
+                                    ${vote.street}, ${vote.house}
+                                    ${vote.entrance ? `, подъезд ${vote.entrance}` : ''}
+                                </span>
+                                <div class="vote-time">
+                                    <i class="far fa-clock me-1"></i>
+                                    ${date} в ${time}
+                                </div>
+                            </div>
+                            <span class="badge bg-info">${avgRating}/5</span>
+                        </div>
+                        <div class="d-flex gap-2 flex-wrap">
+                `;
+                
+                if (vote.answers && Array.isArray(vote.answers)) {
+                    vote.answers.forEach(answer => {
+                        const value = parseInt(answer.value);
+                        let color = "secondary";
+                        if (value >= 4) color = "success";
+                        else if (value >= 3) color = "warning";
+                        else if (value <= 2) color = "danger";
+                        
+                        html += `<span class="badge bg-${color}">${value}</span>`;
+                    });
+                }
+                
+                html += `</div></div>`;
+            });
+            
+            container.innerHTML = html;
+        }
+
+        function displayTopStreets(streets) {
+            const container = document.getElementById('topStreets');
+            
+            if (streets.length === 0) {
+                container.innerHTML = '<p class="text-muted">Нет данных по улицам</p>';
+                return;
+            }
+            
+            const maxVotes = Math.max(...streets.map(s => s[1]));
+            let html = '';
+            
+            streets.forEach(([street, count]) => {
+                const percentage = (count / maxVotes) * 100;
+                html += `
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span>${street}</span>
+                            <span class="badge bg-primary">${count} голосов</span>
+                        </div>
+                        <div class="progress" style="height: 10px;">
+                            <div class="progress-bar bg-primary" style="width: ${percentage}%"></div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+
+        function displayWeeklyActivity(activity) {
+            const container = document.getElementById('weeklyActivity');
+            const maxActivity = Math.max(...activity.values);
+            
+            let html = '<div class="row text-center">';
+            
+            activity.labels.forEach((label, index) => {
+                const count = activity.values[index];
+                const height = maxActivity > 0 ? (count / maxActivity) * 100 : 0;
+                
+                html += `
+                    <div class="col">
+                        <div class="d-flex flex-column align-items-center">
+                            <div class="mb-2" style="height: 120px; width: 100%; display: flex; align-items: flex-end;">
+                                <div class="w-100 bg-primary" style="height: ${height}%; border-radius: 5px 5px 0 0;"></div>
+                            </div>
+                            <div class="small text-muted">${label.split(' ')[0]}</div>
+                            <div class="fw-bold">${count}</div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        function animateStats() {
+            const elements = document.querySelectorAll('.fade-in');
+            elements.forEach((el, index) => {
+                setTimeout(() => {
+                    el.style.opacity = '1';
+                }, index * 100);
+            });
+        }
+
+        function showNoData() {
+            document.getElementById('results').innerHTML = `
+                <div class="alert alert-info text-center py-5">
+                    <div class="display-1 text-muted mb-4">
+                        <i class="fas fa-database"></i>
+                    </div>
+                    <h4 class="mb-3">База данных пуста</h4>
+                    <p class="mb-4">В облачной базе пока нет голосов. Будьте первым, кто проголосует!</p>
+                    <a href="index.html" class="btn btn-primary btn-lg">
+                        <i class="fas fa-vote-yea me-2"></i>Проголосовать первым
+                    </a>
+                </div>
+            `;
+        }
+
+        function showError(error) {
+            document.getElementById('results').innerHTML = `
+                <div class="alert alert-danger">
+                    <h4><i class="fas fa-exclamation-triangle"></i> Ошибка загрузки данных</h4>
+                    <p>${error.message || "Неизвестная ошибка подключения"}</p>
+                    
+                    <div class="mt-3">
+                        <button class="btn btn-warning" onclick="loadData()">
+                            <i class="fas fa-redo me-2"></i>Попробовать снова
+                        </button>
+                        <button class="btn btn-secondary" onclick="location.reload()">
+                            <i class="fas fa-sync-alt me-2"></i>Перезагрузить страницу
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function exportAllData() {
+            if (allVotes.length === 0) {
+                alert('Нет данных для экспорта');
+                return;
+            }
+            
+            const exportData = {
+                timestamp: new Date().toISOString(),
+                totalVotes: allVotes.length,
+                votes: allVotes,
+                note: 'Экспорт данных из опроса ЖКХ'
             };
             
-            const jsonString = JSON.stringify(filteredData, null, 2);
+            const jsonString = JSON.stringify(exportData, null, 2);
             const blob = new Blob([jsonString], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
             
             const a = document.createElement('a');
             a.href = url;
-            a.download = `jkh-poll-${CONFIG.district}-last-week.json`;
+            a.download = `jkh-poll-export-${new Date().toISOString().slice(0,10)}.json`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
-            
-            alert(`Экспортировано ${filteredVotes.length} голосов за последнюю неделю`);
         }
+
+        // Автозагрузка при открытии
+        document.addEventListener('DOMContentLoaded', loadData);
         
-        // Обработка файлов для объединения
-        function handleMergeFiles(event) {
-            filesToMerge = Array.from(event.target.files);
-            document.getElementById('fileCount').textContent = filesToMerge.length;
-            document.getElementById('mergeBtn').disabled = filesToMerge.length === 0;
-        }
-        
-        // Объединение выбранных файлов
-        function mergeSelectedFiles() {
-            if (filesToMerge.length === 0) {
-                alert('Сначала выберите файлы для объединения');
-                return;
+        // Автообновление каждые 60 секунд
+        setInterval(() => {
+            const isVisible = document.visibilityState === 'visible';
+            if (isVisible) {
+                loadData();
             }
-            
-            const readers = filesToMerge.map(file => {
-                return new Promise((resolve, reject) => {
-                    const reader = new FileReader();
-                    reader.onload = function(e) {
-                        try {
-                            const data = JSON.parse(e.target.result);
-                            resolve(data);
-                        } catch (error) {
-                            reject(`Ошибка в файле ${file.name}: ${error.message}`);
-                        }
-                    };
-                    reader.onerror = () => reject(`Ошибка чтения файла ${file.name}`);
-                    reader.readAsText(file);
-                });
-            });
-            
-            Promise.all(readers)
-                .then(results => {
-                    // Объединяем все голоса
-                    const mainData = getPollData();
-                    let addedCount = 0;
-                    
-                    results.forEach(result => {
-                        if (result && result.votes && Array.isArray(result.votes)) {
-                            result.votes.forEach(vote => {
-                                // Проверяем, нет ли такого голоса
-                                const exists = mainData.votes.some(v => 
-                                    v.id === vote.id || 
-                                    (v.street === vote.street && 
-                                     v.house === vote.house && 
-                                     Math.abs(new Date(v.timestamp) - new Date(vote.timestamp)) < 60000) // +- 1 минута
-                                );
-                                
-                                if (!exists) {
-                                    mainData.votes.push(vote);
-                                    addedCount++;
-                                }
-                            });
-                        }
-                    });
-                    
-                    if (addedCount > 0) {
-                        mainData.totalVotes = mainData.votes.length;
-                        mainData.lastMerge = new Date().toISOString();
-                        localStorage.setItem(CONFIG.storageKey, JSON.stringify(mainData));
-                        
-                        alert(`Успешно объединено! Добавлено ${addedCount} новых голосов. Всего: ${mainData.totalVotes}`);
-                        loadAdminStats();
-                    } else {
-                        alert('Нет новых данных для добавления.');
-                    }
-                })
-                .catch(error => {
-                    alert('Ошибка при объединении файлов: ' + error);
-                });
-        }
-        
-        // Удаление старых голосов
-        function clearOldVotes() {
-            if (!confirm('Удалить голосы старше 30 дней?')) return;
-            
-            const data = getPollData();
-            const monthAgo = new Date();
-            monthAgo.setDate(monthAgo.getDate() - 30);
-            
-            const oldVotesCount = data.votes.length;
-            data.votes = data.votes.filter(vote => {
-                const voteDate = new Date(vote.timestamp);
-                return voteDate > monthAgo;
-            });
-            
-            const removedCount = oldVotesCount - data.votes.length;
-            data.totalVotes = data.votes.length;
-            
-            localStorage.setItem(CONFIG.storageKey, JSON.stringify(data));
-            
-            alert(`Удалено ${removedCount} старых голосов. Осталось: ${data.votes.length}`);
-            loadAdminStats();
-        }
-        
-        // Удаление дубликатов
-        function removeDuplicates() {
-            if (!confirm('Удалить повторные голоса с одного адреса?')) return;
-            
-            const data = getPollData();
-            const uniqueVotes = [];
-            const seenAddresses = new Set();
-            let removedCount = 0;
-            
-            // Сортируем по времени (новые первые)
-            data.votes.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-            
-            data.votes.forEach(vote => {
-                const addressKey = `${vote.street}, ${vote.house}`;
-                if (!seenAddresses.has(addressKey)) {
-                    uniqueVotes.push(vote);
-                    seenAddresses.add(addressKey);
-                } else {
-                    removedCount++;
-                }
-            });
-            
-            data.votes = uniqueVotes;
-            data.totalVotes = data.votes.length;
-            
-            localStorage.setItem(CONFIG.storageKey, JSON.stringify(data));
-            
-            alert(`Удалено ${removedCount} дубликатов. Осталось уникальных: ${data.votes.length}`);
-            loadAdminStats();
-        }
-        
-        // Очистка всех данных
-        function clearAllData() {
-            localStorage.removeItem(CONFIG.storageKey);
-            initStorage();
-            alert('Все данные очищены!');
-            loadAdminStats();
-        }
-        
-        // Сохранение настроек
-        function saveSettings() {
-            const newDistrict = document.getElementById('districtInput').value;
-            const newPassword = document.getElementById('newPassword').value;
-            
-            // Обновляем название района в конфиге
-            if (newDistrict && newDistrict !== CONFIG.district) {
-                CONFIG.district = newDistrict;
-                
-                // Обновляем в localStorage
-                const data = getPollData();
-                data.district = newDistrict;
-                localStorage.setItem(CONFIG.storageKey, JSON.stringify(data));
-                
-                // Обновляем на странице
-                document.getElementById('districtName').textContent = newDistrict;
-            }
-            
-            // Обновляем пароль (в реальном приложении нужно хэшировать)
-            if (newPassword) {
-                alert('Пароль изменен. Новый пароль: ' + newPassword);
-                // В реальном приложении здесь должно быть сохранение пароля
-            }
-            
-            alert('Настройки сохранены!');
-        }
-        
-        // Автоматический вход при наличии правильного пароля в URL
-        document.addEventListener('DOMContentLoaded', function() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const passwordParam = urlParams.get('password');
-            
-            if (passwordParam === 'admin123') {
-                document.getElementById('adminPassword').value = 'admin123';
-                checkPassword();
-            }
-            
-            // Устанавливаем название района
-            document.getElementById('districtName').textContent = CONFIG.district;
-        });
+        }, 60000);
     </script>
 </body>
 </html>
