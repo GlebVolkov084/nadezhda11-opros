@@ -48,6 +48,7 @@
             transition: all 0.3s ease;
             height: 100%;
             overflow: hidden;
+            margin-bottom: 1.5rem;
         }
         
         .dashboard-card:hover {
@@ -208,6 +209,10 @@
                 padding: 8px 16px;
                 font-size: 0.9rem;
             }
+            
+            .dashboard-card {
+                margin-bottom: 1rem;
+            }
         }
         
         /* Уведомления */
@@ -224,6 +229,44 @@
             display: flex;
             align-items: center;
             justify-content: center;
+        }
+        
+        /* Исправления лайаута */
+        #adminDashboard .row {
+            display: flex;
+            flex-wrap: wrap;
+            margin-right: -12px;
+            margin-left: -12px;
+        }
+        
+        .col-lg-8, .col-lg-4 {
+            padding-right: 12px;
+            padding-left: 12px;
+            position: relative;
+            min-height: 1px;
+        }
+        
+        @media (min-width: 992px) {
+            .col-lg-8 {
+                flex: 0 0 66.666667%;
+                max-width: 66.666667%;
+            }
+            
+            .col-lg-4 {
+                flex: 0 0 33.333333%;
+                max-width: 33.333333%;
+            }
+        }
+        
+        /* Гарантируем видимость формы входа */
+        #loginSection {
+            position: relative;
+            z-index: 1000;
+        }
+        
+        #loginSection .dashboard-card {
+            background: white;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1) !important;
         }
     </style>
 </head>
@@ -511,120 +554,55 @@
                     </div>
                 </div>
 
-               <!-- Правая колонка: Инструменты -->
-<div class="col-lg-4">
-    <!-- Экспорт данных -->
-    <div class="dashboard-card mb-4" id="export">
-        <div class="card-header bg-success">
-            <h6 class="mb-0"><i class="fas fa-download me-2"></i> Экспорт данных</h6>
-        </div>
-        <div class="card-body">
-            <div class="mb-3">
-                <label class="form-label small">Формат экспорта</label>
-                <select class="form-select" id="exportFormat">
-                    <option value="json">JSON (полные данные)</option>
-                    <option value="csv">CSV (таблица Excel)</option>
-                    <option value="pdf">PDF (отчёт)</option>
-                    <option value="excel">Excel XLSX</option>
-                </select>
-            </div>
-            
-            <div class="mb-3">
-                <label class="form-label small">Период данных</label>
-                <select class="form-select" id="exportPeriod">
-                    <option value="all">Все данные</option>
-                    <option value="week">Последняя неделя</option>
-                    <option value="month">Последний месяц</option>
-                    <option value="custom">Выбрать период...</option>
-                </select>
-            </div>
-            
-            <div class="mb-3" id="customDates" style="display: none;">
-                <div class="row g-2">
-                    <div class="col-6">
+                <!-- Правая колонка: Инструменты -->
+                <div class="col-lg-4 mb-4">
+                    <!-- Экспорт данных -->
+                    <div class="dashboard-card mb-4" id="export">
+                        <div class="card-header bg-success">
+                            <h6 class="mb-0"><i class="fas fa-download me-2"></i> Экспорт данных</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label class="form-label small">Формат экспорта</label>
+                                <select class="form-select" id="exportFormat">
+                                    <option value="json">JSON (полные данные)</option>
+                                    <option value="csv">CSV (таблица Excel)</option>
+                                    <option value="pdf">PDF (отчёт)</option>
+                                    <option value="excel">Excel XLSX</option>
+                                </select>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label small">Период данных</label>
+                                <select class="form-select" id="exportPeriod">
+                                    <option value="all">Все данные</option>
+                                    <option value="week">Последняя неделя</option>
+                                    <option value="month">Последний месяц</option>
+                                    <option value="custom">Выбрать период...</option>
+                                </select>
+                            </div>
+                            
+                            <div class="mb-3" id="customDates" style="display: none;">
+                                <div class="row g-2">
+                                    <div class="col-6">
                                         <input type="date" class="form-control form-control-sm" id="startDate">
-                    </div>
-                    <div class="col-6">
+                                    </div>
+                                    <div class="col-6">
                                         <input type="date" class="form-control form-control-sm" id="endDate">
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <button class="btn btn-success w-100 btn-admin" onclick="exportData()">
+                                <i class="fas fa-file-export me-2"></i> Экспортировать данные
+                            </button>
+                            
+                            <div class="alert alert-light mt-3 small">
+                                <i class="fas fa-info-circle text-info me-2"></i>
+                                Экспорт включает адреса, оценки, время и комментарии
+                            </div>
+                        </div>
                     </div>
-                </div>
-            </div>
-            
-            <button class="btn btn-success w-100 btn-admin" onclick="exportData()">
-                <i class="fas fa-file-export me-2"></i> Экспортировать данные
-            </button>
-            
-            <div class="alert alert-light mt-3 small">
-                <i class="fas fa-info-circle text-info me-2"></i>
-                Экспорт включает адреса, оценки, время и комментарии
-            </div>
-        </div>
-    </div>
-
-    <!-- Настройки -->
-    <div class="dashboard-card mb-4" id="settings">
-        <div class="card-header bg-warning">
-            <h6 class="mb-0"><i class="fas fa-cogs me-2"></i> Настройки системы</h6>
-        </div>
-        <div class="card-body">
-            <div class="mb-3">
-                <label class="form-label small">Название района</label>
-                <input type="text" class="form-control" id="districtNameInput" 
-                       value="Заднепровский район">
-            </div>
-            
-            <div class="mb-3">
-                <label class="form-label small">Новый пароль администратора</label>
-                <input type="password" class="form-control" id="newPassword" 
-                       placeholder="Введите новый пароль">
-            </div>
-            
-            <div class="mb-3">
-                <label class="form-label small">Повторите пароль</label>
-                <input type="password" class="form-control" id="confirmPassword" 
-                       placeholder="Повторите пароль">
-            </div>
-            
-            <div class="mb-3">
-                <div class="form-check">
-                    <input class="form-check-input" type="checkbox" id="enableNotifications">
-                    <label class="form-check-label small" for="enableNotifications">
-                        Уведомления о новых голосах
-                    </label>
-                </div>
-            </div>
-            
-            <button class="btn btn-warning w-100 btn-admin" onclick="saveSettings()">
-                <i class="fas fa-save me-2"></i> Сохранить настройки
-            </button>
-        </div>
-    </div>
-
-    <!-- Импорт данных -->
-    <div class="dashboard-card" id="importSection">
-        <div class="card-header bg-info">
-            <h6 class="mb-0"><i class="fas fa-upload me-2"></i> Импорт данных</h6>
-        </div>
-        <div class="card-body">
-            <div class="mb-3">
-                <div class="drop-zone" id="dropZone" 
-                     style="border: 2px dashed #dee2e6; border-radius: 10px; padding: 30px; text-align: center; cursor: pointer;">
-                    <i class="fas fa-cloud-upload-alt fa-2x text-muted mb-3"></i>
-                    <p class="mb-2">Перетащите файлы сюда</p>
-                    <p class="small text-muted">или кликните для выбора</p>
-                    <input type="file" id="importFiles" multiple accept=".json,.csv" style="display: none;">
-                </div>
-            </div>
-            
-            <div class="d-flex justify-content-between align-items-center">
-                <small class="text-muted" id="fileInfo">Выбрано файлов: 0</small>
-                <button class="btn btn-sm btn-info" id="importBtn" disabled onclick="importData()">
-                    <i class="fas fa-file-import me-1"></i> Импортировать
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
 
                     <!-- Настройки -->
                     <div class="dashboard-card mb-4" id="settings">
@@ -666,7 +644,7 @@
                     </div>
 
                     <!-- Импорт данных -->
-                    <div class="dashboard-card">
+                    <div class="dashboard-card" id="importSection">
                         <div class="card-header bg-info">
                             <h6 class="mb-0"><i class="fas fa-upload me-2"></i> Импорт данных</h6>
                         </div>
@@ -1476,6 +1454,68 @@
             icon.classList.toggle('fa-sun');
         }
         
+        // ==================== ИСПРАВЛЕНИЯ ЛАЙАУТА ====================
+        function fixLayoutIssues() {
+            // Гарантируем, что все карточки имеют правильные отступы
+            const cards = document.querySelectorAll('.dashboard-card');
+            cards.forEach((card, index) => {
+                card.style.marginBottom = '1.5rem';
+                card.style.position = 'relative';
+                
+                // Если это последняя карточка в колонке, уменьшаем отступ
+                if (index === cards.length - 1) {
+                    card.style.marginBottom = '0';
+                }
+            });
+            
+            // Исправляем высоту строк
+            const rows = document.querySelectorAll('#adminDashboard .row');
+            rows.forEach(row => {
+                row.style.display = 'flex';
+                row.style.flexWrap = 'wrap';
+                row.style.marginRight = '-12px';
+                row.style.marginLeft = '-12px';
+                
+                // Убедимся, что дочерние элементы правильно позиционированы
+                const cols = row.querySelectorAll('[class*="col-"]');
+                cols.forEach(col => {
+                    col.style.position = 'relative';
+                    col.style.width = '100%';
+                    col.style.paddingRight = '12px';
+                    col.style.paddingLeft = '12px';
+                    col.style.marginBottom = '1rem';
+                });
+            });
+            
+            // Особое внимание правой колонке
+            const rightColumn = document.querySelector('.col-lg-4');
+            if (rightColumn) {
+                rightColumn.style.order = '2'; // На мобильных показываем после левой колонки
+            }
+        }
+        
+        function checkLayout() {
+            const width = window.innerWidth;
+            
+            if (width < 992) {
+                // На планшетах и мобильных
+                document.querySelectorAll('.col-lg-8, .col-lg-4').forEach(col => {
+                    col.style.flex = '0 0 100%';
+                    col.style.maxWidth = '100%';
+                });
+            } else {
+                // На десктопах
+                document.querySelectorAll('.col-lg-8').forEach(col => {
+                    col.style.flex = '0 0 66.666667%';
+                    col.style.maxWidth = '66.666667%';
+                });
+                document.querySelectorAll('.col-lg-4').forEach(col => {
+                    col.style.flex = '0 0 33.333333%';
+                    col.style.maxWidth = '33.333333%';
+                });
+            }
+        }
+        
         // ==================== ИНИЦИАЛИЗАЦИЯ ====================
         document.addEventListener('DOMContentLoaded', function() {
             // Настройка показа пароля
@@ -1538,103 +1578,57 @@
                 document.getElementById('adminPassword').value = ADMIN_CONFIG.password;
                 setTimeout(login, 500);
             }
+            
+            // Добавляем исправления лайаута
+            setTimeout(() => {
+                fixLayoutIssues();
+                checkLayout();
+            }, 100);
+            
+            // Повторяем после полной загрузки
+            setTimeout(() => {
+                fixLayoutIssues();
+                checkLayout();
+            }, 500);
         });
-        // ==================== ИСПРАВЛЕНИЯ ЛАЙАУТА ====================
-function fixLayoutIssues() {
-    // Гарантируем, что все карточки имеют правильные отступы
-    const cards = document.querySelectorAll('.dashboard-card');
-    cards.forEach((card, index) => {
-        card.style.marginBottom = '1.5rem';
-        card.style.position = 'relative';
         
-        // Если это последняя карточка в колонке, уменьшаем отступ
-        if (index === cards.length - 1) {
-            card.style.marginBottom = '0';
+        // Обновляем при изменении размера окна
+        window.addEventListener('resize', function() {
+            setTimeout(checkLayout, 100);
+            setTimeout(fixLayoutIssues, 150);
+        });
+        
+        // Также исправляем после входа в систему
+        function login() {
+            const password = document.getElementById('adminPassword').value;
+            
+            if (password === ADMIN_CONFIG.password) {
+                currentUser = {
+                    name: "Администратор",
+                    loginTime: new Date()
+                };
+                
+                document.getElementById('loginSection').style.display = 'none';
+                document.getElementById('adminDashboard').style.display = 'block';
+                
+                // Загружаем данные
+                loadAdminData();
+                updateTime();
+                setInterval(updateTime, 60000);
+                
+                // Показываем уведомление
+                showNotification('success', 'Вход выполнен успешно', `Добро пожаловать, ${currentUser.name}!`);
+                
+                // После входа исправляем лайаут
+                setTimeout(() => {
+                    fixLayoutIssues();
+                    checkLayout();
+                }, 300);
+                
+            } else {
+                showNotification('error', 'Ошибка входа', 'Неверный пароль администратора');
+            }
         }
-    });
-    
-    // Исправляем высоту строк
-    const rows = document.querySelectorAll('#adminDashboard .row');
-    rows.forEach(row => {
-        row.style.display = 'flex';
-        row.style.flexWrap = 'wrap';
-        row.style.marginRight = '-15px';
-        row.style.marginLeft = '-15px';
-        
-        // Убедимся, что дочерние элементы правильно позиционированы
-        const cols = row.querySelectorAll('[class*="col-"]');
-        cols.forEach(col => {
-            col.style.position = 'relative';
-            col.style.width = '100%';
-            col.style.paddingRight = '15px';
-            col.style.paddingLeft = '15px';
-            col.style.marginBottom = '1rem';
-        });
-    });
-    
-    // Особое внимание правой колонке
-    const rightColumn = document.querySelector('.col-lg-4');
-    if (rightColumn) {
-        rightColumn.style.order = '2'; // На мобильных показываем после левой колонки
-    }
-}
-
-// ==================== АДАПТИВНЫЙ ЛАЙАУТ ====================
-function checkLayout() {
-    const width = window.innerWidth;
-    
-    if (width < 992) {
-        // На планшетах и мобильных
-        document.querySelectorAll('.col-lg-8, .col-lg-4').forEach(col => {
-            col.style.flex = '0 0 100%';
-            col.style.maxWidth = '100%';
-        });
-    } else {
-        // На десктопах
-        document.querySelectorAll('.col-lg-8').forEach(col => {
-            col.style.flex = '0 0 66.666667%';
-            col.style.maxWidth = '66.666667%';
-        });
-        document.querySelectorAll('.col-lg-4').forEach(col => {
-            col.style.flex = '0 0 33.333333%';
-            col.style.maxWidth = '33.333333%';
-        });
-    }
-}
-
-// ==================== ИНИЦИАЛИЗАЦИЯ ====================
-document.addEventListener('DOMContentLoaded', function() {
-    // ... существующий код ...
-    
-    // Добавляем исправления лайаута
-    setTimeout(() => {
-        fixLayoutIssues();
-        checkLayout();
-    }, 100);
-    
-    // Повторяем после полной загрузки
-    setTimeout(() => {
-        fixLayoutIssues();
-        checkLayout();
-    }, 500);
-});
-
-// Обновляем при изменении размера окна
-window.addEventListener('resize', function() {
-    setTimeout(checkLayout, 100);
-    setTimeout(fixLayoutIssues, 150);
-});
-
-// Также исправляем после входа в систему
-function login() {
-    // ... существующий код входа ...
-    
-    // После входа исправляем лайаут
-    setTimeout(() => {
-        fixLayoutIssues();
-        checkLayout();
-    }, 300);
-}
     </script>
 </body>
 </html>
