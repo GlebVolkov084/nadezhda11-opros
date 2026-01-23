@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -805,6 +804,9 @@
         // ==================== АУТЕНТИФИКАЦИЯ ====================
         function login() {
             const password = document.getElementById('adminPassword').value;
+            
+            // Загружаем сохраненный пароль перед проверкой
+            loadAdminConfig();
             
             if (password === ADMIN_CONFIG.password) {
                 currentUser = {
@@ -1965,23 +1967,23 @@
                 ADMIN_CONFIG.defaultDistrict = newDistrict;
                 changes.push('название района');
                 
-                // Обновляем отображение
-                document.querySelectorAll('.district-name').forEach(el => {
-                    el.textContent = newDistrict;
-                });
+                // Сохраняем настройки
+                saveAdminConfig();
             }
             
             // Обновление пароля
             if (newPassword) {
                 if (newPassword === confirmPassword) {
+                    // Сохраняем новый пароль
                     ADMIN_CONFIG.password = newPassword;
+                    saveAdminConfig();
                     changes.push('пароль администратора');
                     
                     // Очищаем поля пароля
                     document.getElementById('newPassword').value = '';
                     document.getElementById('confirmPassword').value = '';
                     
-                    showNotification('info', 'Пароль изменён', `Новый пароль: ${newPassword}`);
+                    showNotification('success', 'Пароль изменен', 'Новый пароль успешно сохранен');
                 } else {
                     showNotification('error', 'Ошибка', 'Пароли не совпадают');
                     return;
@@ -1997,11 +1999,44 @@
                 changes.push('уведомления отключены');
             }
             
-            if (changes.length > 0) {
+            if (changes.length > 0 && !newPassword) {
                 showNotification('success', 'Настройки сохранены', 
                     `Изменения: ${changes.join(', ')}`);
-            } else {
-                showNotification('info', 'Настройки', 'Изменений нет');
+            }
+        }
+        
+        // Сохраняем конфиг в localStorage
+        function saveAdminConfig() {
+            try {
+                const configToSave = {
+                    password: ADMIN_CONFIG.password,
+                    defaultDistrict: ADMIN_CONFIG.defaultDistrict,
+                    itemsPerPage: ADMIN_CONFIG.itemsPerPage,
+                    lastModified: new Date().toISOString()
+                };
+                localStorage.setItem('adminConfig', JSON.stringify(configToSave));
+                console.log('Конфиг сохранен в localStorage');
+            } catch (error) {
+                console.error('Ошибка сохранения конфига:', error);
+            }
+        }
+        
+        // Загружаем конфиг из localStorage
+        function loadAdminConfig() {
+            try {
+                const saved = localStorage.getItem('adminConfig');
+                if (saved) {
+                    const config = JSON.parse(saved);
+                    if (config.password) ADMIN_CONFIG.password = config.password;
+                    if (config.defaultDistrict) {
+                        ADMIN_CONFIG.defaultDistrict = config.defaultDistrict;
+                        document.getElementById('districtNameInput').value = config.defaultDistrict;
+                    }
+                    if (config.itemsPerPage) ADMIN_CONFIG.itemsPerPage = config.itemsPerPage;
+                    console.log('Конфиг загружен из localStorage');
+                }
+            } catch (error) {
+                console.error('Ошибка загрузки конфига:', error);
             }
         }
 
@@ -2023,12 +2058,13 @@
                     <li><strong>Быстрые операции:</strong> Очистка БД, резервное копирование</li>
                     <li><strong>Опасные операции:</strong> Удаление дубликатов, старых голосов, полный сброс</li>
                 </ul>
-                <h5>Советы:</h5>
+                <h5>Важная информация:</h5>
                 <ul>
+                    <li>Пароль администратора сохраняется в браузере (localStorage)</li>
+                    <li>После смены пароля, старый пароль перестанет работать</li>
+                    <li>Для сброса пароля очистите localStorage браузера</li>
                     <li>Регулярно создавайте резервные копии данных</li>
-                    <li>Измените пароль по умолчанию</li>
-                    <li>Перед опасными операциями экспортируйте данные</li>
-                    <li>Для массового сбора данных используйте импорт</li>
+                    <li>Измените пароль по умолчанию после первого входа</li>
                 </ul>
                 `,
                 'Закрыть',
@@ -2220,6 +2256,9 @@
                 const icon = document.querySelector('[onclick="toggleDarkMode()"] i');
                 if (icon) icon.className = 'fas fa-sun';
             }
+            
+            // Загружаем сохраненный конфиг
+            loadAdminConfig();
             
             // Автоматический вход по URL параметру
             const urlParams = new URLSearchParams(window.location.search);
