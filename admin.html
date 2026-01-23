@@ -1539,6 +1539,102 @@
                 setTimeout(login, 500);
             }
         });
+        // ==================== ИСПРАВЛЕНИЯ ЛАЙАУТА ====================
+function fixLayoutIssues() {
+    // Гарантируем, что все карточки имеют правильные отступы
+    const cards = document.querySelectorAll('.dashboard-card');
+    cards.forEach((card, index) => {
+        card.style.marginBottom = '1.5rem';
+        card.style.position = 'relative';
+        
+        // Если это последняя карточка в колонке, уменьшаем отступ
+        if (index === cards.length - 1) {
+            card.style.marginBottom = '0';
+        }
+    });
+    
+    // Исправляем высоту строк
+    const rows = document.querySelectorAll('#adminDashboard .row');
+    rows.forEach(row => {
+        row.style.display = 'flex';
+        row.style.flexWrap = 'wrap';
+        row.style.marginRight = '-15px';
+        row.style.marginLeft = '-15px';
+        
+        // Убедимся, что дочерние элементы правильно позиционированы
+        const cols = row.querySelectorAll('[class*="col-"]');
+        cols.forEach(col => {
+            col.style.position = 'relative';
+            col.style.width = '100%';
+            col.style.paddingRight = '15px';
+            col.style.paddingLeft = '15px';
+            col.style.marginBottom = '1rem';
+        });
+    });
+    
+    // Особое внимание правой колонке
+    const rightColumn = document.querySelector('.col-lg-4');
+    if (rightColumn) {
+        rightColumn.style.order = '2'; // На мобильных показываем после левой колонки
+    }
+}
+
+// ==================== АДАПТИВНЫЙ ЛАЙАУТ ====================
+function checkLayout() {
+    const width = window.innerWidth;
+    
+    if (width < 992) {
+        // На планшетах и мобильных
+        document.querySelectorAll('.col-lg-8, .col-lg-4').forEach(col => {
+            col.style.flex = '0 0 100%';
+            col.style.maxWidth = '100%';
+        });
+    } else {
+        // На десктопах
+        document.querySelectorAll('.col-lg-8').forEach(col => {
+            col.style.flex = '0 0 66.666667%';
+            col.style.maxWidth = '66.666667%';
+        });
+        document.querySelectorAll('.col-lg-4').forEach(col => {
+            col.style.flex = '0 0 33.333333%';
+            col.style.maxWidth = '33.333333%';
+        });
+    }
+}
+
+// ==================== ИНИЦИАЛИЗАЦИЯ ====================
+document.addEventListener('DOMContentLoaded', function() {
+    // ... существующий код ...
+    
+    // Добавляем исправления лайаута
+    setTimeout(() => {
+        fixLayoutIssues();
+        checkLayout();
+    }, 100);
+    
+    // Повторяем после полной загрузки
+    setTimeout(() => {
+        fixLayoutIssues();
+        checkLayout();
+    }, 500);
+});
+
+// Обновляем при изменении размера окна
+window.addEventListener('resize', function() {
+    setTimeout(checkLayout, 100);
+    setTimeout(fixLayoutIssues, 150);
+});
+
+// Также исправляем после входа в систему
+function login() {
+    // ... существующий код входа ...
+    
+    // После входа исправляем лайаут
+    setTimeout(() => {
+        fixLayoutIssues();
+        checkLayout();
+    }, 300);
+}
     </script>
 </body>
 </html>
