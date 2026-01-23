@@ -7,6 +7,8 @@
     <title>Админ-панель - Управление опросом ЖКХ</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
         :root {
             --primary-color: #2c3e50;
@@ -23,19 +25,16 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
         
-        /* Навигация */
         .admin-navbar {
             background: linear-gradient(135deg, var(--primary-color) 0%, #1a252f 100%);
             box-shadow: 0 4px 20px rgba(0,0,0,0.15);
             padding: 1rem 0;
         }
         
-        /* КОНТЕЙНЕР - ФИКС */
         .container-fluid.py-4 {
             padding: 2rem 15px !important;
         }
         
-        /* РЯДЫ - ФИКС НАЛОЖЕНИЯ */
         .row.gutter-fix {
             margin-right: -10px;
             margin-left: -10px;
@@ -47,7 +46,6 @@
             margin-bottom: 20px;
         }
         
-        /* КАРТОЧКИ - ФИКС */
         .dashboard-card {
             border: none;
             border-radius: 15px;
@@ -93,7 +91,6 @@
             height: auto;
         }
         
-        /* Показатели */
         .stat-number {
             font-size: 2.5rem;
             font-weight: 700;
@@ -113,7 +110,6 @@
         .change-up { background: rgba(39, 174, 96, 0.15); color: var(--success-color); }
         .change-down { background: rgba(231, 76, 60, 0.15); color: var(--danger-color); }
         
-        /* Таблицы */
         .data-table {
             font-size: 0.9rem;
             margin-bottom: 0;
@@ -136,7 +132,6 @@
         .status-verified { background: rgba(39, 174, 96, 0.15); color: var(--success-color); }
         .status-duplicate { background: rgba(243, 156, 18, 0.15); color: var(--warning-color); }
         
-        /* Кнопки */
         .btn-admin {
             padding: 10px 20px;
             border-radius: 10px;
@@ -150,7 +145,6 @@
             box-shadow: 0 5px 15px rgba(0,0,0,0.1);
         }
         
-        /* Формы */
         .form-floating {
             margin-bottom: 1rem;
         }
@@ -160,7 +154,6 @@
             box-shadow: 0 0 0 0.25rem rgba(52, 152, 219, 0.25);
         }
         
-        /* Анимации */
         @keyframes fadeInUp {
             from {
                 opacity: 0;
@@ -176,7 +169,6 @@
             animation: fadeInUp 0.6s ease-out;
         }
         
-        /* Адаптивность */
         @media (max-width: 768px) {
             .stat-number {
                 font-size: 1.8rem;
@@ -192,7 +184,6 @@
             }
         }
         
-        /* ФОРМА ВХОДА */
         #loginSection {
             min-height: 70vh;
             display: flex;
@@ -205,7 +196,6 @@
             width: 100%;
         }
         
-        /* Уведомления */
         .notification-badge {
             position: absolute;
             top: -5px;
@@ -221,7 +211,6 @@
             justify-content: center;
         }
         
-        /* Drop zone */
         .drop-zone {
             border: 2px dashed #dee2e6;
             border-radius: 10px;
@@ -236,10 +225,66 @@
             background: rgba(52, 152, 219, 0.05);
         }
         
-        /* Прогресс бары */
         .progress {
             height: 6px;
             border-radius: 3px;
+        }
+        
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            min-width: 300px;
+            max-width: 400px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            animation: slideIn 0.3s ease-out;
+        }
+        
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        .spinner-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+        
+        .confirmation-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+        
+        .confirmation-content {
+            background: white;
+            padding: 2rem;
+            border-radius: 15px;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
         }
     </style>
 </head>
@@ -250,7 +295,7 @@
             <a class="navbar-brand d-flex align-items-center" href="#">
                 <div class="position-relative me-3">
                     <i class="fas fa-user-shield fa-xl"></i>
-                    <span class="notification-badge" id="notificationBadge" style="display: none;">3</span>
+                    <span class="notification-badge" id="notificationBadge" style="display: none;">0</span>
                 </div>
                 <div>
                     <div class="fw-bold">Панель администратора</div>
@@ -490,6 +535,9 @@
                                     <button class="btn btn-sm btn-outline-primary" onclick="loadMoreVotes()">
                                         <i class="fas fa-plus me-1"></i> Загрузить еще
                                     </button>
+                                    <button class="btn btn-sm btn-outline-danger" onclick="showDeleteModal()">
+                                        <i class="fas fa-filter-circle-xmark me-1"></i> Фильтровать
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -689,17 +737,70 @@
     <!-- Скрипты -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Конфигурация
+        // Глобальные переменные
         const ADMIN_CONFIG = {
             password: "admin123",
             defaultDistrict: "Заднепровский район",
-            itemsPerPage: 15
+            itemsPerPage: 15,
+            firebaseConfig: {
+                apiKey: "AIzaSyA9x1ZcFgHjklmnoiT2XqPq3RzABCDEFGH",
+                authDomain: "poll-hope-11.firebaseapp.com",
+                databaseURL: "https://poll-hope-11-default-rtdb.europe-west1.firebasedatabase.app",
+                projectId: "poll-hope-11",
+                storageBucket: "poll-hope-11.appspot.com",
+                messagingSenderId: "123456789012",
+                appId: "1:123456789012:web:abcdef1234567890"
+            }
         };
         
         let currentUser = null;
         let allVotes = [];
         let currentPage = 1;
         let filesToImport = [];
+        let currentFilter = 'all';
+        let filteredVotes = [];
+        let db = null;
+        let firebaseInitialized = false;
+
+        // ==================== FIREBASE ИНИЦИАЛИЗАЦИЯ ====================
+        async function initializeFirebase() {
+            try {
+                if (typeof firebase === 'undefined') {
+                    await loadFirebaseSDK();
+                }
+                
+                if (!firebase.apps.length) {
+                    firebase.initializeApp(ADMIN_CONFIG.firebaseConfig);
+                }
+                
+                db = firebase.database();
+                firebaseInitialized = true;
+                console.log("Firebase initialized successfully");
+                
+            } catch (error) {
+                console.error("Firebase initialization error:", error);
+                showNotification('error', 'Ошибка Firebase', 'Не удалось подключиться к базе данных');
+            }
+        }
+
+        async function loadFirebaseSDK() {
+            return new Promise((resolve, reject) => {
+                const script1 = document.createElement('script');
+                script1.src = "https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js";
+                
+                script1.onload = () => {
+                    const script2 = document.createElement('script');
+                    script2.src = "https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js";
+                    
+                    script2.onload = () => resolve();
+                    script2.onerror = () => reject(new Error("Failed to load Firebase Database"));
+                    document.head.appendChild(script2);
+                };
+                
+                script1.onerror = () => reject(new Error("Failed to load Firebase App"));
+                document.head.appendChild(script1);
+            });
+        }
 
         // ==================== АУТЕНТИФИКАЦИЯ ====================
         function login() {
@@ -714,12 +815,14 @@
                 document.getElementById('loginSection').style.display = 'none';
                 document.getElementById('adminDashboard').style.display = 'block';
                 
-                // Загружаем данные
-                loadAdminData();
+                // Инициализируем Firebase и загружаем данные
+                initializeFirebase().then(() => {
+                    loadAdminData();
+                });
+                
                 updateTime();
                 setInterval(updateTime, 60000);
                 
-                // Показываем уведомление
                 showNotification('success', 'Вход выполнен успешно', `Добро пожаловать, ${currentUser.name}!`);
                 
             } else {
@@ -736,13 +839,16 @@
                 showNotification('info', 'Выход выполнен', 'Вы вышли из системы');
             }
         }
-        
+
         // ==================== ЗАГРУЗКА ДАННЫХ ====================
         async function loadAdminData() {
+            showSpinner('Загрузка данных...');
+            
             try {
                 // Загружаем голоса из Firebase
                 const votes = await fetchVotes();
                 allVotes = votes;
+                filteredVotes = [...votes];
                 
                 // Обновляем дашборд
                 updateDashboardStats(votes);
@@ -760,21 +866,61 @@
                 document.getElementById('dashboardSubtitle').innerHTML = 
                     `<i class="fas fa-exclamation-triangle text-danger me-2"></i>` +
                     `Ошибка загрузки: ${error.message}`;
+                
+                showNotification('error', 'Ошибка загрузки', 'Не удалось загрузить данные из базы');
+            } finally {
+                hideSpinner();
             }
         }
         
         async function fetchVotes() {
-            const databaseURL = "https://poll-hope-11-default-rtdb.europe-west1.firebasedatabase.app";
-            const response = await fetch(`${databaseURL}/votes.json`);
-            
-            if (!response.ok) {
-                throw new Error(`Ошибка HTTP: ${response.status}`);
+            if (!firebaseInitialized || !db) {
+                throw new Error("Firebase не инициализирован");
             }
             
-            const data = await response.json();
-            return data ? Object.values(data) : [];
+            const snapshot = await db.ref('votes').once('value');
+            const data = snapshot.val();
+            
+            if (!data) {
+                return [];
+            }
+            
+            // Преобразуем объект в массив
+            const votesArray = Object.keys(data).map(key => ({
+                id: key,
+                ...data[key]
+            }));
+            
+            // Сортируем по дате (новые первые)
+            return votesArray.sort((a, b) => {
+                return new Date(b.timestamp) - new Date(a.timestamp);
+            });
         }
-        
+
+        async function saveVoteToFirebase(vote) {
+            if (!firebaseInitialized || !db) {
+                throw new Error("Firebase не инициализирован");
+            }
+            
+            await db.ref('votes/' + vote.id).set(vote);
+        }
+
+        async function deleteVoteFromFirebase(voteId) {
+            if (!firebaseInitialized || !db) {
+                throw new Error("Firebase не инициализирован");
+            }
+            
+            await db.ref('votes/' + voteId).remove();
+        }
+
+        async function clearAllVotesFromFirebase() {
+            if (!firebaseInitialized || !db) {
+                throw new Error("Firebase не инициализирован");
+            }
+            
+            await db.ref('votes').remove();
+        }
+
         // ==================== ОБНОВЛЕНИЕ СТАТИСТИКИ ====================
         function updateDashboardStats(votes) {
             const stats = calculateStats(votes);
@@ -825,7 +971,6 @@
                 };
             }
             
-            // Основная статистика
             const totalVotes = votes.length;
             
             // Уникальные адреса
@@ -857,6 +1002,7 @@
             // Активность
             const today = new Date().toDateString();
             const yesterday = new Date(Date.now() - 86400000).toDateString();
+            const weekAgo = new Date(Date.now() - 7 * 86400000);
             
             const todayVotes = votes.filter(v => 
                 new Date(v.timestamp).toDateString() === today
@@ -866,14 +1012,20 @@
                 new Date(v.timestamp).toDateString() === yesterday
             ).length;
             
-            const weekAgo = new Date(Date.now() - 7 * 86400000);
             const weeklyVotes = votes.filter(v => 
                 new Date(v.timestamp) > weekAgo
             ).length;
             
-            // Изменения (упрощённо)
-            const votesChange = 10;
-            const ratingChange = 5;
+            // Изменения (рассчитываем реальные)
+            const lastWeekVotes = votes.filter(v => {
+                const weekAgo = new Date(Date.now() - 7 * 86400000);
+                const twoWeeksAgo = new Date(Date.now() - 14 * 86400000);
+                const voteDate = new Date(v.timestamp);
+                return voteDate > twoWeeksAgo && voteDate <= weekAgo;
+            }).length;
+            
+            const votesChange = lastWeekVotes > 0 ? 
+                Math.round(((weeklyVotes - lastWeekVotes) / lastWeekVotes) * 100) : 0;
             
             // Пиковый час
             const hourCounts = new Array(24).fill(0);
@@ -893,7 +1045,7 @@
                 yesterdayVotes,
                 weeklyVotes,
                 votesChange,
-                ratingChange,
+                ratingChange: 5, // Для примера
                 peakHour
             };
         }
@@ -912,8 +1064,8 @@
                 }
             }
         }
-        
-        // ==================== ТАБЛИЦА ГОЛОСОВ ====================
+
+        // ==================== УПРАВЛЕНИЕ ГОЛОСАМИ ====================
         function updateVotesTable(votes) {
             const tableBody = document.getElementById('votesTable');
             const startIndex = (currentPage - 1) * ADMIN_CONFIG.itemsPerPage;
@@ -947,16 +1099,24 @@
                     avgRating = (sum / vote.answers.length).toFixed(1);
                 }
                 
-                // Статус
-                const statuses = ['status-new', 'status-verified', 'status-duplicate'];
-                const status = statuses[index % 3];
-                const statusText = ['Новый', 'Проверен', 'Дубль'][index % 3];
+                // Статус (определяем по дате)
+                const voteDate = new Date(vote.timestamp);
+                const now = new Date();
+                const diffHours = (now - voteDate) / (1000 * 60 * 60);
+                
+                let status = 'status-verified';
+                let statusText = 'Проверен';
+                
+                if (diffHours < 24) {
+                    status = 'status-new';
+                    statusText = 'Новый';
+                }
                 
                 html += `
                     <tr>
                         <td><small class="text-muted">${startIndex + index + 1}</small></td>
                         <td>
-                            <div class="fw-semibold">${vote.street}, ${vote.house}</div>
+                            <div class="fw-semibold">${vote.street || 'Не указано'}, ${vote.house || 'Не указано'}</div>
                             <small class="text-muted">${vote.entrance ? 'Подъезд ' + vote.entrance : 'Подъезд не указан'}</small>
                         </td>
                         <td>
@@ -987,38 +1147,206 @@
         }
         
         function filterVotes(filterType) {
-            let filteredVotes = [...allVotes];
+            currentFilter = filterType;
+            currentPage = 1;
             
             switch(filterType) {
                 case 'today':
                     const today = new Date().toDateString();
-                    filteredVotes = filteredVotes.filter(v => 
+                    filteredVotes = allVotes.filter(v => 
                         new Date(v.timestamp).toDateString() === today
                     );
                     break;
                     
                 case 'week':
                     const weekAgo = new Date(Date.now() - 7 * 86400000);
-                    filteredVotes = filteredVotes.filter(v => 
+                    filteredVotes = allVotes.filter(v => 
                         new Date(v.timestamp) > weekAgo
                     );
                     break;
                     
                 case 'all':
                 default:
-                    // Все голоса
+                    filteredVotes = [...allVotes];
                     break;
             }
             
-            currentPage = 1;
             updateVotesTable(filteredVotes);
         }
         
         function loadMoreVotes() {
             currentPage++;
-            updateVotesTable(allVotes);
+            updateVotesTable(filteredVotes);
         }
         
+        async function deleteVote(voteId) {
+            if (!confirm('Вы действительно хотите удалить этот голос?')) {
+                return;
+            }
+            
+            showSpinner('Удаление голоса...');
+            
+            try {
+                // Удаляем из Firebase
+                await deleteVoteFromFirebase(voteId);
+                
+                // Удаляем из локального массива
+                allVotes = allVotes.filter(v => v.id !== voteId);
+                filteredVotes = filteredVotes.filter(v => v.id !== voteId);
+                
+                // Обновляем интерфейс
+                updateDashboardStats(allVotes);
+                updateVotesTable(filteredVotes);
+                updateNotifications();
+                
+                showNotification('success', 'Удаление голоса', 'Голос успешно удалён');
+                
+            } catch (error) {
+                console.error('Ошибка удаления голоса:', error);
+                showNotification('error', 'Ошибка удаления', 'Не удалось удалить голос');
+            } finally {
+                hideSpinner();
+            }
+        }
+        
+        function viewVote(voteId) {
+            const vote = allVotes.find(v => v.id === voteId);
+            if (!vote) return;
+            
+            let details = `
+                <strong>Адрес:</strong> ${vote.street}, ${vote.house}${vote.entrance ? `, подъезд ${vote.entrance}` : ''}<br>
+                <strong>Дата:</strong> ${new Date(vote.timestamp).toLocaleString('ru-RU')}<br>
+                <strong>Район:</strong> ${vote.district || 'Не указан'}<br><br>
+                <strong>Ответы:</strong><br>
+            `;
+            
+            if (vote.answers && Array.isArray(vote.answers)) {
+                vote.answers.forEach((answer, index) => {
+                    details += `${index + 1}. ${answer.question}: ${answer.value}/5<br>`;
+                });
+            }
+            
+            if (vote.comment) {
+                details += `<br><strong>Комментарий:</strong><br>${vote.comment}`;
+            }
+            
+            showConfirmationModal(
+                'Просмотр голоса',
+                details,
+                'Закрыть',
+                () => {}
+            );
+        }
+        
+        function showDeleteModal() {
+            showConfirmationModal(
+                'Фильтрация голосов',
+                `
+                <div class="mb-3">
+                    <label class="form-label">Удалить голосы по критерию:</label>
+                    <select class="form-select" id="deleteCriteria">
+                        <option value="old">Старше 30 дней</option>
+                        <option value="duplicates">Дубликаты адресов</option>
+                        <option value="low_rating">С оценкой ниже 2</option>
+                        <option value="no_address">Без адреса</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Подтвердите пароль:</label>
+                    <input type="password" class="form-control" id="deletePassword" placeholder="Введите пароль администратора">
+                </div>
+                `,
+                'Удалить',
+                async () => {
+                    const password = document.getElementById('deletePassword').value;
+                    const criteria = document.getElementById('deleteCriteria').value;
+                    
+                    if (password !== ADMIN_CONFIG.password) {
+                        showNotification('error', 'Ошибка', 'Неверный пароль');
+                        return;
+                    }
+                    
+                    await performBulkDelete(criteria);
+                }
+            );
+        }
+        
+        async function performBulkDelete(criteria) {
+            showSpinner('Выполнение массового удаления...');
+            
+            try {
+                let votesToDelete = [];
+                
+                switch(criteria) {
+                    case 'old':
+                        const monthAgo = new Date(Date.now() - 30 * 86400000);
+                        votesToDelete = allVotes.filter(v => new Date(v.timestamp) < monthAgo);
+                        break;
+                        
+                    case 'duplicates':
+                        const addressMap = new Map();
+                        votesToDelete = [];
+                        
+                        // Находим дубликаты (оставляем самый новый)
+                        allVotes.forEach(vote => {
+                            const addressKey = `${vote.street}-${vote.house}-${vote.entrance}`;
+                            if (addressMap.has(addressKey)) {
+                                const existing = addressMap.get(addressKey);
+                                // Оставляем самый новый, удаляем старый
+                                if (new Date(vote.timestamp) > new Date(existing.timestamp)) {
+                                    votesToDelete.push(existing);
+                                    addressMap.set(addressKey, vote);
+                                } else {
+                                    votesToDelete.push(vote);
+                                }
+                            } else {
+                                addressMap.set(addressKey, vote);
+                            }
+                        });
+                        break;
+                        
+                    case 'low_rating':
+                        votesToDelete = allVotes.filter(vote => {
+                            if (!vote.answers || !Array.isArray(vote.answers)) return false;
+                            const avg = vote.answers.reduce((sum, ans) => sum + parseInt(ans.value), 0) / vote.answers.length;
+                            return avg < 2;
+                        });
+                        break;
+                        
+                    case 'no_address':
+                        votesToDelete = allVotes.filter(v => !v.street || !v.house);
+                        break;
+                }
+                
+                if (votesToDelete.length === 0) {
+                    showNotification('info', 'Удаление', 'Нет голосов для удаления по выбранному критерию');
+                    return;
+                }
+                
+                // Удаляем из Firebase
+                for (const vote of votesToDelete) {
+                    await deleteVoteFromFirebase(vote.id);
+                }
+                
+                // Обновляем локальные данные
+                allVotes = allVotes.filter(v => !votesToDelete.some(del => del.id === v.id));
+                filteredVotes = filteredVotes.filter(v => !votesToDelete.some(del => del.id === v.id));
+                
+                // Обновляем интерфейс
+                updateDashboardStats(allVotes);
+                updateVotesTable(filteredVotes);
+                updateNotifications();
+                
+                showNotification('success', 'Массовое удаление', `Удалено ${votesToDelete.length} голосов`);
+                
+            } catch (error) {
+                console.error('Ошибка массового удаления:', error);
+                showNotification('error', 'Ошибка удаления', 'Не удалось выполнить массовое удаление');
+            } finally {
+                hideSpinner();
+            }
+        }
+
         // ==================== ЭКСПОРТ ДАННЫХ ====================
         function exportData() {
             const format = document.getElementById('exportFormat').value;
@@ -1049,14 +1377,25 @@
                 }
             }
             
+            if (exportVotes.length === 0) {
+                showNotification('warning', 'Экспорт', 'Нет данных для экспорта по выбранному периоду');
+                return;
+            }
+            
             // Экспорт в выбранном формате
-            if (format === 'json') {
-                exportJSON(exportVotes);
-            } else if (format === 'csv') {
-                exportCSV(exportVotes);
-            } else {
-                showNotification('info', 'Экспорт', 
-                    `Экспорт в формате ${format.toUpperCase()} в разработке`);
+            switch(format) {
+                case 'json':
+                    exportJSON(exportVotes);
+                    break;
+                case 'csv':
+                    exportCSV(exportVotes);
+                    break;
+                case 'pdf':
+                    exportPDF(exportVotes);
+                    break;
+                case 'excel':
+                    exportExcel(exportVotes);
+                    break;
             }
         }
         
@@ -1065,30 +1404,39 @@
                 exportDate: new Date().toISOString(),
                 totalVotes: votes.length,
                 votes: votes,
-                district: ADMIN_CONFIG.defaultDistrict
+                district: ADMIN_CONFIG.defaultDistrict,
+                statistics: calculateStats(votes)
             };
             
             const jsonString = JSON.stringify(data, null, 2);
-            downloadFile(jsonString, 'jkh-poll-export.json', 'application/json');
+            downloadFile(jsonString, `jkh-poll-export-${new Date().toISOString().slice(0,10)}.json`, 'application/json');
             showNotification('success', 'Экспорт JSON', 
                 `Экспортировано ${votes.length} голосов`);
         }
         
         function exportCSV(votes) {
             // Заголовки CSV
-            let csv = 'Дата,Время,Улица,Дом,Подъезд,Вопрос1,Вопрос2,Вопрос3,Вопрос4,Вопрос5,Средняя\n';
+            let csv = 'Дата,Время,Район,Улица,Дом,Подъезд,';
             
+            // Добавляем заголовки для вопросов
+            for (let i = 1; i <= 5; i++) {
+                csv += `Вопрос${i},`;
+            }
+            
+            csv += 'Средняя оценка,ID\n';
+            
+            // Данные
             votes.forEach(vote => {
                 const date = new Date(vote.timestamp).toLocaleDateString('ru-RU');
                 const time = new Date(vote.timestamp).toLocaleTimeString('ru-RU');
                 
                 // Ответы
                 const answers = vote.answers || [];
-                const q1 = answers[0]?.value || '';
-                const q2 = answers[1]?.value || '';
-                const q3 = answers[2]?.value || '';
-                const q4 = answers[3]?.value || '';
-                const q5 = answers[4]?.value || '';
+                const answerValues = [];
+                
+                for (let i = 0; i < 5; i++) {
+                    answerValues.push(answers[i]?.value || '');
+                }
                 
                 // Средняя оценка
                 let avg = 0;
@@ -1097,13 +1445,173 @@
                     avg = (sum / answers.length).toFixed(1);
                 }
                 
-                csv += `${date},${time},${vote.street || ''},${vote.house || ''},` +
-                       `${vote.entrance || ''},${q1},${q2},${q3},${q4},${q5},${avg}\n`;
+                // Экранируем запятые в данных
+                const escapeCSV = (str) => {
+                    if (!str) return '';
+                    if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+                        return '"' + str.replace(/"/g, '""') + '"';
+                    }
+                    return str;
+                };
+                
+                csv += `${escapeCSV(date)},${escapeCSV(time)},${escapeCSV(vote.district || '')},` +
+                       `${escapeCSV(vote.street || '')},${escapeCSV(vote.house || '')},` +
+                       `${escapeCSV(vote.entrance || '')},` +
+                       `${answerValues.map(escapeCSV).join(',')},` +
+                       `${avg},${escapeCSV(vote.id)}\n`;
             });
             
-            downloadFile(csv, 'jkh-poll-export.csv', 'text/csv');
+            downloadFile(csv, `jkh-poll-export-${new Date().toISOString().slice(0,10)}.csv`, 'text/csv');
             showNotification('success', 'Экспорт CSV', 
                 `Экспортировано ${votes.length} голосов`);
+        }
+        
+        function exportPDF(votes) {
+            try {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+                
+                // Заголовок
+                doc.setFontSize(16);
+                doc.text('Отчёт по опросу ЖКХ', 20, 20);
+                doc.setFontSize(12);
+                doc.text(`Район: ${ADMIN_CONFIG.defaultDistrict}`, 20, 30);
+                doc.text(`Дата экспорта: ${new Date().toLocaleString('ru-RU')}`, 20, 37);
+                doc.text(`Всего голосов: ${votes.length}`, 20, 44);
+                
+                // Статистика
+                const stats = calculateStats(votes);
+                doc.text(`Уникальных адресов: ${stats.uniqueAddresses}`, 20, 51);
+                doc.text(`Средняя оценка: ${stats.averageRating}/5`, 20, 58);
+                
+                // Таблица с голосами (первые 20)
+                let y = 70;
+                doc.setFontSize(10);
+                
+                // Заголовки таблицы
+                doc.text('№', 20, y);
+                doc.text('Адрес', 30, y);
+                doc.text('Дата', 100, y);
+                doc.text('Оценка', 140, y);
+                
+                y += 7;
+                doc.line(20, y, 190, y);
+                y += 3;
+                
+                // Данные
+                votes.slice(0, 20).forEach((vote, index) => {
+                    if (y > 270) {
+                        doc.addPage();
+                        y = 20;
+                    }
+                    
+                    const address = `${vote.street || ''}, ${vote.house || ''}`;
+                    const date = new Date(vote.timestamp).toLocaleDateString('ru-RU');
+                    
+                    // Средняя оценка
+                    let avgRating = 0;
+                    if (vote.answers && vote.answers.length > 0) {
+                        const sum = vote.answers.reduce((acc, ans) => acc + parseInt(ans.value), 0);
+                        avgRating = (sum / vote.answers.length).toFixed(1);
+                    }
+                    
+                    doc.text((index + 1).toString(), 20, y);
+                    doc.text(address.substring(0, 30), 30, y);
+                    doc.text(date, 100, y);
+                    doc.text(avgRating.toString(), 140, y);
+                    
+                    y += 7;
+                });
+                
+                if (votes.length > 20) {
+                    doc.text(`... и ещё ${votes.length - 20} голосов`, 20, y);
+                }
+                
+                doc.save(`jkh-poll-export-${new Date().toISOString().slice(0,10)}.pdf`);
+                showNotification('success', 'Экспорт PDF', 
+                    `Экспортировано ${votes.length} голосов в PDF`);
+                
+            } catch (error) {
+                console.error('Ошибка экспорта PDF:', error);
+                showNotification('error', 'Ошибка экспорта PDF', 'Не удалось создать PDF файл');
+            }
+        }
+        
+        function exportExcel(votes) {
+            try {
+                // Подготовка данных для Excel
+                const data = [];
+                
+                // Заголовки
+                data.push([
+                    'Дата', 'Время', 'Район', 'Улица', 'Дом', 'Подъезд',
+                    'Вопрос1', 'Вопрос2', 'Вопрос3', 'Вопрос4', 'Вопрос5',
+                    'Средняя оценка', 'ID'
+                ]);
+                
+                // Данные
+                votes.forEach(vote => {
+                    const date = new Date(vote.timestamp).toLocaleDateString('ru-RU');
+                    const time = new Date(vote.timestamp).toLocaleTimeString('ru-RU');
+                    
+                    // Ответы
+                    const answers = vote.answers || [];
+                    const answerValues = [];
+                    
+                    for (let i = 0; i < 5; i++) {
+                        answerValues.push(answers[i]?.value || '');
+                    }
+                    
+                    // Средняя оценка
+                    let avg = 0;
+                    if (answers.length > 0) {
+                        const sum = answers.reduce((acc, ans) => acc + parseInt(ans.value || 0), 0);
+                        avg = (sum / answers.length).toFixed(1);
+                    }
+                    
+                    data.push([
+                        date, time, vote.district || '', vote.street || '', vote.house || '', vote.entrance || '',
+                        ...answerValues, avg, vote.id
+                    ]);
+                });
+                
+                // Создание рабочей книги
+                const ws = XLSX.utils.aoa_to_sheet(data);
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, "Голоса");
+                
+                // Добавляем лист со статистикой
+                const stats = calculateStats(votes);
+                const statsData = [
+                    ['Статистика опроса'],
+                    ['Район', ADMIN_CONFIG.defaultDistrict],
+                    ['Дата экспорта', new Date().toLocaleString('ru-RU')],
+                    ['Всего голосов', stats.totalVotes],
+                    ['Уникальных адресов', stats.uniqueAddresses],
+                    ['Средняя оценка', stats.averageRating],
+                    ['Голосов сегодня', stats.todayVotes],
+                    ['Голосов за неделю', stats.weeklyVotes],
+                    ['Пиковый час активности', stats.peakHour]
+                ];
+                
+                const wsStats = XLSX.utils.aoa_to_sheet(statsData);
+                XLSX.utils.book_append_sheet(wb, wsStats, "Статистика");
+                
+                // Сохранение файла
+                XLSX.writeFile(wb, `jkh-poll-export-${new Date().toISOString().slice(0,10)}.xlsx`);
+                showNotification('success', 'Экспорт Excel', 
+                    `Экспортировано ${votes.length} голосов в Excel`);
+                
+            } catch (error) {
+                console.error('Ошибка экспорта Excel:', error);
+                showNotification('error', 'Ошибка экспорта Excel', 'Не удалось создать Excel файл');
+            }
+        }
+        
+        function exportCSV() {
+            // Просто вызываем exportData с форматом CSV
+            document.getElementById('exportFormat').value = 'csv';
+            exportData();
         }
         
         function downloadFile(content, filename, type) {
@@ -1118,7 +1626,385 @@
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
         }
+
+        // ==================== БЫСТРЫЕ ОПЕРАЦИИ ====================
+        async function cleanupDatabase() {
+            if (!confirm('Выполнить очистку базы данных? Будут удалены пустые и некорректные записи.')) {
+                return;
+            }
+            
+            showSpinner('Очистка базы данных...');
+            
+            try {
+                let cleanedCount = 0;
+                
+                // Находим некорректные записи
+                const invalidVotes = allVotes.filter(vote => {
+                    // Проверяем на наличие обязательных полей
+                    if (!vote.street || !vote.house) return true;
+                    if (!vote.answers || !Array.isArray(vote.answers) || vote.answers.length === 0) return true;
+                    
+                    // Проверяем корректность ответов
+                    const invalidAnswers = vote.answers.some(answer => {
+                        const value = parseInt(answer.value);
+                        return isNaN(value) || value < 1 || value > 5;
+                    });
+                    
+                    return invalidAnswers;
+                });
+                
+                // Удаляем из Firebase
+                for (const vote of invalidVotes) {
+                    await deleteVoteFromFirebase(vote.id);
+                    cleanedCount++;
+                }
+                
+                // Обновляем локальные данные
+                allVotes = allVotes.filter(v => !invalidVotes.some(iv => iv.id === v.id));
+                filteredVotes = filteredVotes.filter(v => !invalidVotes.some(iv => iv.id === v.id));
+                
+                // Обновляем интерфейс
+                updateDashboardStats(allVotes);
+                updateVotesTable(filteredVotes);
+                
+                showNotification('success', 'Очистка БД', 
+                    `Удалено ${cleanedCount} некорректных записей`);
+                
+            } catch (error) {
+                console.error('Ошибка очистки БД:', error);
+                showNotification('error', 'Ошибка очистки', 'Не удалось выполнить очистку базы данных');
+            } finally {
+                hideSpinner();
+            }
+        }
         
+        async function backupData() {
+            showSpinner('Создание резервной копии...');
+            
+            try {
+                // Создаём полную резервную копию
+                const backup = {
+                    timestamp: new Date().toISOString(),
+                    totalVotes: allVotes.length,
+                    votes: allVotes,
+                    district: ADMIN_CONFIG.defaultDistrict,
+                    statistics: calculateStats(allVotes),
+                    config: ADMIN_CONFIG
+                };
+                
+                const jsonString = JSON.stringify(backup, null, 2);
+                downloadFile(jsonString, `jkh-poll-backup-${new Date().toISOString().slice(0,19).replace(/:/g, '-')}.json`, 'application/json');
+                
+                showNotification('success', 'Резервная копия', 
+                    `Создана резервная копия ${allVotes.length} голосов`);
+                
+            } catch (error) {
+                console.error('Ошибка создания резервной копии:', error);
+                showNotification('error', 'Ошибка резервного копирования', 'Не удалось создать резервную копию');
+            } finally {
+                hideSpinner();
+            }
+        }
+
+        // ==================== ИМПОРТ ДАННЫХ ====================
+        document.getElementById('dropZone').addEventListener('click', () => {
+            document.getElementById('importFiles').click();
+        });
+        
+        document.getElementById('importFiles').addEventListener('change', (event) => {
+            filesToImport = Array.from(event.target.files);
+            updateFileInfo();
+        });
+        
+        function updateFileInfo() {
+            const fileCount = filesToImport.length;
+            const fileInfo = document.getElementById('fileInfo');
+            const importBtn = document.getElementById('importBtn');
+            
+            fileInfo.textContent = `Выбрано файлов: ${fileCount}`;
+            importBtn.disabled = fileCount === 0;
+        }
+        
+        async function importData() {
+            if (filesToImport.length === 0) {
+                showNotification('warning', 'Импорт', 'Выберите файлы для импорта');
+                return;
+            }
+            
+            if (!confirm(`Импортировать ${filesToImport.length} файлов?`)) {
+                return;
+            }
+            
+            showSpinner('Импорт данных...');
+            
+            let totalImported = 0;
+            let totalSkipped = 0;
+            
+            try {
+                for (const file of filesToImport) {
+                    try {
+                        const text = await file.text();
+                        const data = JSON.parse(text);
+                        
+                        if (data.votes && Array.isArray(data.votes)) {
+                            for (const vote of data.votes) {
+                                // Проверяем, нет ли уже такого голоса
+                                const exists = allVotes.some(v => v.id === vote.id);
+                                
+                                if (!exists) {
+                                    // Добавляем в Firebase
+                                    await saveVoteToFirebase(vote);
+                                    totalImported++;
+                                } else {
+                                    totalSkipped++;
+                                }
+                            }
+                        }
+                    } catch (error) {
+                        console.error(`Ошибка обработки файла ${file.name}:`, error);
+                    }
+                }
+                
+                // Перезагружаем данные
+                await loadAdminData();
+                
+                showNotification('success', 'Импорт завершён', 
+                    `Импортировано: ${totalImported} голосов, пропущено (дубликаты): ${totalSkipped}`);
+                
+                // Сбрасываем список файлов
+                filesToImport = [];
+                updateFileInfo();
+                document.getElementById('importFiles').value = '';
+                
+            } catch (error) {
+                console.error('Ошибка импорта:', error);
+                showNotification('error', 'Ошибка импорта', 'Не удалось импортировать данные');
+            } finally {
+                hideSpinner();
+            }
+        }
+
+        // ==================== ОПАСНЫЕ ОПЕРАЦИИ ====================
+        async function removeDuplicates() {
+            if (!confirm('Удалить дубликаты голосов с одного адреса? Будет оставлен последний голос.')) {
+                return;
+            }
+            
+            showSpinner('Удаление дубликатов...');
+            
+            try {
+                const addressMap = new Map();
+                const duplicates = [];
+                
+                // Сортируем по дате (новые первые)
+                const sortedVotes = [...allVotes].sort((a, b) => 
+                    new Date(b.timestamp) - new Date(a.timestamp)
+                );
+                
+                // Находим дубликаты
+                sortedVotes.forEach(vote => {
+                    const addressKey = `${vote.street}-${vote.house}-${vote.entrance}`;
+                    if (addressMap.has(addressKey)) {
+                        duplicates.push(vote);
+                    } else {
+                        addressMap.set(addressKey, vote);
+                    }
+                });
+                
+                if (duplicates.length === 0) {
+                    showNotification('info', 'Удаление дубликатов', 'Дубликатов не найдено');
+                    return;
+                }
+                
+                // Удаляем дубликаты из Firebase
+                for (const vote of duplicates) {
+                    await deleteVoteFromFirebase(vote.id);
+                }
+                
+                // Обновляем локальные данные
+                allVotes = allVotes.filter(v => !duplicates.some(d => d.id === v.id));
+                filteredVotes = filteredVotes.filter(v => !duplicates.some(d => d.id === v.id));
+                
+                // Обновляем интерфейс
+                updateDashboardStats(allVotes);
+                updateVotesTable(filteredVotes);
+                
+                showNotification('success', 'Удаление дубликатов', 
+                    `Удалено ${duplicates.length} дубликатов`);
+                
+            } catch (error) {
+                console.error('Ошибка удаления дубликатов:', error);
+                showNotification('error', 'Ошибка удаления', 'Не удалось удалить дубликаты');
+            } finally {
+                hideSpinner();
+            }
+        }
+        
+        async function removeOldVotes() {
+            if (!confirm('Удалить голосы старше 30 дней?')) {
+                return;
+            }
+            
+            showSpinner('Удаление старых голосов...');
+            
+            try {
+                const monthAgo = new Date(Date.now() - 30 * 86400000);
+                const oldVotes = allVotes.filter(v => new Date(v.timestamp) < monthAgo);
+                
+                if (oldVotes.length === 0) {
+                    showNotification('info', 'Удаление старых голосов', 'Старых голосов не найдено');
+                    return;
+                }
+                
+                // Удаляем из Firebase
+                for (const vote of oldVotes) {
+                    await deleteVoteFromFirebase(vote.id);
+                }
+                
+                // Обновляем локальные данные
+                allVotes = allVotes.filter(v => !oldVotes.some(ov => ov.id === v.id));
+                filteredVotes = filteredVotes.filter(v => !oldVotes.some(ov => ov.id === v.id));
+                
+                // Обновляем интерфейс
+                updateDashboardStats(allVotes);
+                updateVotesTable(filteredVotes);
+                
+                showNotification('success', 'Удаление старых голосов', 
+                    `Удалено ${oldVotes.length} голосов старше 30 дней`);
+                
+            } catch (error) {
+                console.error('Ошибка удаления старых голосов:', error);
+                showNotification('error', 'Ошибка удаления', 'Не удалось удалить старые голоса');
+            } finally {
+                hideSpinner();
+            }
+        }
+        
+        function showResetModal() {
+            showConfirmationModal(
+                'Сброс всех данных',
+                `
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>ВНИМАНИЕ!</strong> Вы собираетесь удалить ВСЕ данные голосования.
+                    Это действие необратимо!
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Введите пароль для подтверждения:</label>
+                    <input type="password" class="form-control" id="resetPassword" placeholder="Пароль администратора">
+                </div>
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" id="confirmReset">
+                    <label class="form-check-label" for="confirmReset">
+                        Я понимаю, что все данные будут удалены без возможности восстановления
+                    </label>
+                </div>
+                `,
+                'Сбросить всё',
+                async () => {
+                    const password = document.getElementById('resetPassword').value;
+                    const confirmed = document.getElementById('confirmReset').checked;
+                    
+                    if (!confirmed) {
+                        showNotification('error', 'Ошибка', 'Подтвердите понимание последствий');
+                        return;
+                    }
+                    
+                    if (password !== ADMIN_CONFIG.password) {
+                        showNotification('error', 'Ошибка', 'Неверный пароль');
+                        return;
+                    }
+                    
+                    await resetAllData();
+                },
+                true
+            );
+        }
+        
+        async function resetAllData() {
+            if (!confirm('ВНИМАНИЕ! Это удалит ВСЕ данные без возможности восстановления. Продолжить?')) {
+                return;
+            }
+            
+            showSpinner('Сброс всех данных...');
+            
+            try {
+                // Очищаем Firebase
+                await clearAllVotesFromFirebase();
+                
+                // Очищаем локальные данные
+                allVotes = [];
+                filteredVotes = [];
+                
+                // Обновляем интерфейс
+                updateDashboardStats(allVotes);
+                updateVotesTable(filteredVotes);
+                updateNotifications();
+                
+                showNotification('success', 'Сброс данных', 'Все данные успешно сброшены');
+                
+            } catch (error) {
+                console.error('Ошибка сброса данных:', error);
+                showNotification('error', 'Ошибка сброса', 'Не удалось сбросить данные');
+            } finally {
+                hideSpinner();
+            }
+        }
+
+        // ==================== НАСТРОЙКИ ====================
+        function saveSettings() {
+            const newDistrict = document.getElementById('districtNameInput').value;
+            const newPassword = document.getElementById('newPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            const enableNotifications = document.getElementById('enableNotifications').checked;
+            
+            let changes = [];
+            
+            // Обновление названия района
+            if (newDistrict && newDistrict !== ADMIN_CONFIG.defaultDistrict) {
+                ADMIN_CONFIG.defaultDistrict = newDistrict;
+                changes.push('название района');
+                
+                // Обновляем отображение
+                document.querySelectorAll('.district-name').forEach(el => {
+                    el.textContent = newDistrict;
+                });
+            }
+            
+            // Обновление пароля
+            if (newPassword) {
+                if (newPassword === confirmPassword) {
+                    ADMIN_CONFIG.password = newPassword;
+                    changes.push('пароль администратора');
+                    
+                    // Очищаем поля пароля
+                    document.getElementById('newPassword').value = '';
+                    document.getElementById('confirmPassword').value = '';
+                    
+                    showNotification('info', 'Пароль изменён', `Новый пароль: ${newPassword}`);
+                } else {
+                    showNotification('error', 'Ошибка', 'Пароли не совпадают');
+                    return;
+                }
+            }
+            
+            // Настройка уведомлений
+            localStorage.setItem('adminNotifications', enableNotifications ? 'enabled' : 'disabled');
+            
+            if (enableNotifications) {
+                changes.push('уведомления включены');
+            } else {
+                changes.push('уведомления отключены');
+            }
+            
+            if (changes.length > 0) {
+                showNotification('success', 'Настройки сохранены', 
+                    `Изменения: ${changes.join(', ')}`);
+            } else {
+                showNotification('info', 'Настройки', 'Изменений нет');
+            }
+        }
+
         // ==================== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ====================
         function refreshDashboard() {
             showNotification('info', 'Обновление', 'Загрузка обновлённых данных...');
@@ -1126,8 +2012,28 @@
         }
         
         function showHelp() {
-            showNotification('info', 'Справка', 
-                'Используйте меню для навигации. Для экспорта данных выберите формат и период.');
+            showConfirmationModal(
+                'Справка по админ-панели',
+                `
+                <h5>Основные функции:</h5>
+                <ul>
+                    <li><strong>Управление голосами:</strong> Просмотр, фильтрация и удаление голосов</li>
+                    <li><strong>Экспорт данных:</strong> Экспорт в JSON, CSV, PDF, Excel форматах</li>
+                    <li><strong>Импорт данных:</strong> Загрузка данных из JSON/CSV файлов</li>
+                    <li><strong>Быстрые операции:</strong> Очистка БД, резервное копирование</li>
+                    <li><strong>Опасные операции:</strong> Удаление дубликатов, старых голосов, полный сброс</li>
+                </ul>
+                <h5>Советы:</h5>
+                <ul>
+                    <li>Регулярно создавайте резервные копии данных</li>
+                    <li>Измените пароль по умолчанию</li>
+                    <li>Перед опасными операциями экспортируйте данные</li>
+                    <li>Для массового сбора данных используйте импорт</li>
+                </ul>
+                `,
+                'Закрыть',
+                () => {}
+            );
         }
         
         function updateTime() {
@@ -1166,15 +2072,12 @@
                 'warning': 'exclamation-circle'
             }[type] || 'info-circle';
             
+            // Удаляем старые уведомления
+            const oldNotifications = document.querySelectorAll('.notification');
+            oldNotifications.forEach(n => n.remove());
+            
             const notification = document.createElement('div');
-            notification.className = `alert ${alertClass} alert-dismissible fade show position-fixed`;
-            notification.style.cssText = `
-                top: 20px;
-                right: 20px;
-                z-index: 9999;
-                min-width: 300px;
-                box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-            `;
+            notification.className = `notification alert ${alertClass} alert-dismissible fade show`;
             notification.innerHTML = `
                 <div class="d-flex align-items-center">
                     <i class="fas fa-${icon} fa-lg me-3"></i>
@@ -1188,7 +2091,7 @@
             
             document.body.appendChild(notification);
             
-            // Автоматическое скрытие
+            // Автоматическое скрытие через 5 секунд
             setTimeout(() => {
                 if (notification.parentNode) {
                     notification.remove();
@@ -1196,13 +2099,66 @@
             }, 5000);
         }
         
+        function showSpinner(message = 'Загрузка...') {
+            // Удаляем старый спиннер
+            const oldSpinner = document.getElementById('spinnerOverlay');
+            if (oldSpinner) oldSpinner.remove();
+            
+            const spinner = document.createElement('div');
+            spinner.id = 'spinnerOverlay';
+            spinner.className = 'spinner-overlay';
+            spinner.innerHTML = `
+                <div class="text-center">
+                    <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;"></div>
+                    <p class="mt-3 text-white">${message}</p>
+                </div>
+            `;
+            
+            document.body.appendChild(spinner);
+        }
+        
+        function hideSpinner() {
+            const spinner = document.getElementById('spinnerOverlay');
+            if (spinner) spinner.remove();
+        }
+        
+        function showConfirmationModal(title, content, confirmText, onConfirm, showCancel = true) {
+            // Удаляем старые модальные окна
+            const oldModal = document.getElementById('confirmationModal');
+            if (oldModal) oldModal.remove();
+            
+            const modal = document.createElement('div');
+            modal.id = 'confirmationModal';
+            modal.className = 'confirmation-modal';
+            modal.innerHTML = `
+                <div class="confirmation-content">
+                    <h5 class="mb-3">${title}</h5>
+                    <div class="mb-4">${content}</div>
+                    <div class="d-flex justify-content-end gap-2">
+                        ${showCancel ? `<button class="btn btn-secondary" onclick="document.getElementById('confirmationModal').remove()">Отмена</button>` : ''}
+                        <button class="btn btn-primary" onclick="
+                            const modal = document.getElementById('confirmationModal');
+                            modal.remove();
+                            (${onConfirm.toString()})();
+                        ">${confirmText}</button>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+        }
+        
         function toggleDarkMode() {
             document.body.classList.toggle('dark-mode');
             const icon = document.querySelector('[onclick="toggleDarkMode()"] i');
             icon.classList.toggle('fa-moon');
             icon.classList.toggle('fa-sun');
+            
+            // Сохраняем настройку
+            const isDarkMode = document.body.classList.contains('dark-mode');
+            localStorage.setItem('darkMode', isDarkMode ? 'enabled' : 'disabled');
         }
-        
+
         // ==================== ИНИЦИАЛИЗАЦИЯ ====================
         document.addEventListener('DOMContentLoaded', function() {
             // Настройка показа пароля
@@ -1257,6 +2213,14 @@
                 updateFileInfo();
             }
             
+            // Загружаем настройки темы
+            const darkMode = localStorage.getItem('darkMode');
+            if (darkMode === 'enabled') {
+                document.body.classList.add('dark-mode');
+                const icon = document.querySelector('[onclick="toggleDarkMode()"] i');
+                if (icon) icon.className = 'fas fa-sun';
+            }
+            
             // Автоматический вход по URL параметру
             const urlParams = new URLSearchParams(window.location.search);
             const passwordParam = urlParams.get('password');
@@ -1266,54 +2230,6 @@
                 setTimeout(login, 500);
             }
         });
-        
-        // Упрощённые функции для демонстрации
-        function exportCSV() {
-            exportData();
-        }
-        
-        function cleanupDatabase() {
-            showNotification('info', 'Очистка БД', 'Функция в разработке');
-        }
-        
-        function backupData() {
-            showNotification('info', 'Резервное копирование', 'Функция в разработке');
-        }
-        
-        function removeDuplicates() {
-            if (confirm('Удалить дубликаты голосов с одного адреса?')) {
-                showNotification('success', 'Удаление дубликатов', 'Операция выполнена успешно');
-            }
-        }
-        
-        function removeOldVotes() {
-            if (confirm('Удалить голосы старше 30 дней?')) {
-                showNotification('success', 'Удаление старых голосов', 'Операция выполнена успешно');
-            }
-        }
-        
-        function showResetModal() {
-            if (confirm('ВНИМАНИЕ! Это удалит ВСЕ данные. Продолжить?')) {
-                showNotification('success', 'Сброс данных', 'Все данные успешно сброшены');
-            }
-        }
-        
-        function saveSettings() {
-            showNotification('success', 'Настройки', 'Настройки успешно сохранены');
-        }
-        
-        function importData() {
-            showNotification('info', 'Импорт данных', 'Функция в разработке');
-        }
-        
-        function updateFileInfo() {
-            const fileCount = filesToImport.length;
-            const fileInfo = document.getElementById('fileInfo');
-            const importBtn = document.getElementById('importBtn');
-            
-            fileInfo.textContent = `Выбрано файлов: ${fileCount}`;
-            importBtn.disabled = fileCount === 0;
-        }
     </script>
 </body>
 </html>
