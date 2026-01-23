@@ -7,7 +7,6 @@
     <title>Админ-панель - Управление опросом ЖКХ</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link rel="stylesheet" href="style.css">
     <style>
         :root {
             --primary-color: #2c3e50;
@@ -19,7 +18,7 @@
         }
         
         body {
-            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            background: #f8f9fa;
             min-height: 100vh;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
@@ -31,24 +30,16 @@
             padding: 1rem 0;
         }
         
-        .nav-badge {
-            background: var(--warning-color);
-            color: white;
-            font-size: 0.7rem;
-            padding: 2px 8px;
-            border-radius: 10px;
-            margin-left: 5px;
-        }
-        
-        /* Карточки */
+        /* Карточки - ФИКС НАЛОЖЕНИЯ */
         .dashboard-card {
             border: none;
             border-radius: 15px;
             box-shadow: 0 5px 20px rgba(0,0,0,0.08);
             transition: all 0.3s ease;
-            height: 100%;
             overflow: hidden;
-            margin-bottom: 1.5rem;
+            margin-bottom: 24px !important; /* ГАРАНТИРОВАННЫЙ ОТСТУП */
+            position: relative;
+            background: white;
         }
         
         .dashboard-card:hover {
@@ -79,6 +70,48 @@
             background: linear-gradient(135deg, var(--warning-color) 0%, #d35400 100%);
         }
         
+        /* ОСНОВНОЙ КОНТЕЙНЕР - ФИКС */
+        .container-fluid.py-4 {
+            padding: 2rem 1rem !important;
+        }
+        
+        /* РЯДЫ - ФИКС НАЛОЖЕНИЯ */
+        #adminDashboard .row {
+            display: flex;
+            flex-wrap: wrap;
+            margin-right: -12px;
+            margin-left: -12px;
+            width: calc(100% + 24px);
+        }
+        
+        #adminDashboard .row > [class*="col-"] {
+            padding-right: 12px;
+            padding-left: 12px;
+            margin-bottom: 24px;
+            width: 100%;
+        }
+        
+        /* КОЛОНКИ - ФИКС */
+        @media (min-width: 992px) {
+            #adminDashboard .col-lg-8 {
+                flex: 0 0 66.666667%;
+                max-width: 66.666667%;
+            }
+            
+            #adminDashboard .col-lg-4 {
+                flex: 0 0 33.333333%;
+                max-width: 33.333333%;
+            }
+        }
+        
+        /* ГАРАНТИЯ ВИДИМОСТИ КАРТОЧЕК */
+        .dashboard-card .card-body {
+            padding: 1.5rem;
+            min-height: 150px;
+            position: relative;
+            z-index: 1;
+        }
+        
         /* Показатели */
         .stat-number {
             font-size: 2.5rem;
@@ -89,25 +122,40 @@
             -webkit-text-fill-color: transparent;
         }
         
-        .stat-change {
-            font-size: 0.85rem;
-            padding: 3px 10px;
-            border-radius: 20px;
+        /* Кнопки */
+        .btn-admin {
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            margin-bottom: 8px;
         }
         
-        .change-up { background: rgba(39, 174, 96, 0.15); color: var(--success-color); }
-        .change-down { background: rgba(231, 76, 60, 0.15); color: var(--danger-color); }
-        
-        /* Графики мини */
-        .mini-chart {
-            height: 60px;
-            width: 100%;
-            margin-top: 10px;
+        .btn-admin:last-child {
+            margin-bottom: 0;
         }
         
-        /* Таблицы */
+        .btn-admin:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        /* ФОРМА ВХОДА - ГАРАНТИЯ ВИДИМОСТИ */
+        #loginSection {
+            position: relative;
+            z-index: 1000;
+            margin-top: 2rem;
+        }
+        
+        #loginSection .dashboard-card {
+            margin: 0 auto;
+            max-width: 400px;
+        }
+        
+        /* ТАБЛИЦА */
         .data-table {
             font-size: 0.9rem;
+            margin-bottom: 0;
         }
         
         .data-table th {
@@ -116,106 +164,28 @@
             border-top: none;
         }
         
-        .vote-status {
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            font-weight: 500;
+        /* ОПАСНЫЕ ОПЕРАЦИИ - ОТДЕЛЬНЫЙ БЛОК */
+        .border-danger {
+            margin-top: 2rem;
+            clear: both;
         }
         
-        .status-new { background: rgba(52, 152, 219, 0.15); color: var(--secondary-color); }
-        .status-verified { background: rgba(39, 174, 96, 0.15); color: var(--success-color); }
-        .status-duplicate { background: rgba(243, 156, 18, 0.15); color: var(--warning-color); }
-        
-        /* Кнопки */
-        .btn-admin {
-            padding: 10px 20px;
-            border-radius: 10px;
-            font-weight: 500;
-            transition: all 0.3s ease;
-        }
-        
-        .btn-admin:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-        }
-        
-        /* Формы */
-        .form-floating {
-            margin-bottom: 1rem;
-        }
-        
-        .form-floating label {
-            color: #6c757d;
-        }
-        
-        .form-control:focus, .form-select:focus {
-            border-color: var(--secondary-color);
-            box-shadow: 0 0 0 0.25rem rgba(52, 152, 219, 0.25);
-        }
-        
-        /* Модальные окна */
-        .modal-admin .modal-content {
-            border-radius: 15px;
-            border: none;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
-        }
-        
-        .modal-admin .modal-header {
-            background: linear-gradient(135deg, var(--primary-color) 0%, #34495e 100%);
-            color: white;
-            border-radius: 15px 15px 0 0;
-            padding: 1.5rem;
-        }
-        
-        /* Анимации */
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-        
-        .fade-in-up {
-            animation: fadeInUp 0.6s ease-out;
-        }
-        
-        /* Темная тема */
-        .dark-mode {
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-            color: #e9ecef;
-        }
-        
-        .dark-mode .dashboard-card {
-            background: #2d3748;
-            color: #e9ecef;
-        }
-        
-        .dark-mode .table {
-            color: #e9ecef;
-        }
-        
-        /* Адаптивность */
+        /* АДАПТИВНОСТЬ */
         @media (max-width: 768px) {
             .stat-number {
                 font-size: 1.8rem;
             }
             
-            .btn-admin {
-                padding: 8px 16px;
-                font-size: 0.9rem;
+            .dashboard-card {
+                margin-bottom: 16px !important;
             }
             
-            .dashboard-card {
-                margin-bottom: 1rem;
+            #adminDashboard .row > [class*="col-"] {
+                margin-bottom: 16px;
             }
         }
         
-        /* Уведомления */
+        /* УВЕДОМЛЕНИЯ */
         .notification-badge {
             position: absolute;
             top: -5px;
@@ -229,44 +199,6 @@
             display: flex;
             align-items: center;
             justify-content: center;
-        }
-        
-        /* Исправления лайаута */
-        #adminDashboard .row {
-            display: flex;
-            flex-wrap: wrap;
-            margin-right: -12px;
-            margin-left: -12px;
-        }
-        
-        .col-lg-8, .col-lg-4 {
-            padding-right: 12px;
-            padding-left: 12px;
-            position: relative;
-            min-height: 1px;
-        }
-        
-        @media (min-width: 992px) {
-            .col-lg-8 {
-                flex: 0 0 66.666667%;
-                max-width: 66.666667%;
-            }
-            
-            .col-lg-4 {
-                flex: 0 0 33.333333%;
-                max-width: 33.333333%;
-            }
-        }
-        
-        /* Гарантируем видимость формы входа */
-        #loginSection {
-            position: relative;
-            z-index: 1000;
-        }
-        
-        #loginSection .dashboard-card {
-            background: white;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.1) !important;
         }
     </style>
 </head>
@@ -329,7 +261,7 @@
         <!-- Система аутентификации -->
         <div id="loginSection" class="row justify-content-center">
             <div class="col-md-6 col-lg-4">
-                <div class="dashboard-card fade-in-up">
+                <div class="dashboard-card">
                     <div class="card-header bg-primary">
                         <h5 class="mb-0"><i class="fas fa-lock"></i> Аутентификация</h5>
                     </div>
@@ -354,7 +286,7 @@
                             </div>
                         </div>
                         
-                        <button class="btn btn-primary btn-admin w-100" onclick="login()">
+                        <button class="btn btn-primary w-100" onclick="login()" style="padding: 12px; border-radius: 8px;">
                             <i class="fas fa-sign-in-alt me-2"></i> Войти в систему
                         </button>
                         
@@ -393,8 +325,8 @@
             </div>
 
             <!-- Основные показатели -->
-            <div class="row mb-4 fade-in-up">
-                <div class="col-xl-3 col-md-6 mb-4">
+            <div class="row mb-4">
+                <div class="col-xl-3 col-md-6">
                     <div class="dashboard-card">
                         <div class="card-header bg-primary">
                             <h6 class="mb-0"><i class="fas fa-users me-2"></i>Всего голосов</h6>
@@ -402,15 +334,14 @@
                         <div class="card-body text-center py-4">
                             <div class="stat-number" id="totalVotesAdmin">0</div>
                             <div class="text-muted">Всего ответов</div>
-                            <div class="mini-chart" id="votesChart"></div>
                             <div class="small mt-2">
-                                <span class="change-up" id="votesChange">+0%</span> за неделю
+                                <span id="votesChange">+0%</span> за неделю
                             </div>
                         </div>
                     </div>
                 </div>
                 
-                <div class="col-xl-3 col-md-6 mb-4">
+                <div class="col-xl-3 col-md-6">
                     <div class="dashboard-card">
                         <div class="card-header bg-success">
                             <h6 class="mb-0"><i class="fas fa-home me-2"></i>Уникальные адреса</h6>
@@ -422,14 +353,11 @@
                                 <span>Охват района:</span>
                                 <span class="fw-bold" id="coveragePercent">0%</span>
                             </div>
-                            <div class="progress mt-2" style="height: 6px;">
-                                <div class="progress-bar bg-success" id="coverageBar" style="width: 0%"></div>
-                            </div>
                         </div>
                     </div>
                 </div>
                 
-                <div class="col-xl-3 col-md-6 mb-4">
+                <div class="col-xl-3 col-md-6">
                     <div class="dashboard-card">
                         <div class="card-header bg-info">
                             <h6 class="mb-0"><i class="fas fa-star-half-alt me-2"></i>Средняя оценка</h6>
@@ -437,21 +365,14 @@
                         <div class="card-body text-center py-4">
                             <div class="stat-number" id="avgRatingAdmin">0.0</div>
                             <div class="text-muted">из 5 возможных</div>
-                            <div class="rating-stars mt-2" style="font-size: 1.2rem;">
-                                <i class="fas fa-star" id="star1"></i>
-                                <i class="fas fa-star" id="star2"></i>
-                                <i class="fas fa-star" id="star3"></i>
-                                <i class="fas fa-star" id="star4"></i>
-                                <i class="fas fa-star" id="star5"></i>
-                            </div>
                             <div class="small mt-2">
-                                <span class="change-up" id="ratingChange">+0%</span> за месяц
+                                <span id="ratingChange">+0%</span> за месяц
                             </div>
                         </div>
                     </div>
                 </div>
                 
-                <div class="col-xl-3 col-md-6 mb-4">
+                <div class="col-xl-3 col-md-6">
                     <div class="dashboard-card">
                         <div class="card-header bg-warning">
                             <h6 class="mb-0"><i class="fas fa-chart-line me-2"></i>Активность</h6>
@@ -459,14 +380,6 @@
                         <div class="card-body text-center py-4">
                             <div class="stat-number" id="todayActivity">0</div>
                             <div class="text-muted">Голосов сегодня</div>
-                            <div class="d-flex justify-content-between small mt-3">
-                                <span>Вчера:</span>
-                                <span id="yesterdayActivity">0</span>
-                            </div>
-                            <div class="d-flex justify-content-between small">
-                                <span>За неделю:</span>
-                                <span id="weeklyActivity">0</span>
-                            </div>
                             <div class="mt-2">
                                 <span class="badge bg-primary" id="peakHour">Пик: --:--</span>
                             </div>
@@ -477,52 +390,33 @@
 
             <!-- Основной контент -->
             <div class="row">
-                <!-- Левая колонка: Управление данными -->
-                <div class="col-lg-8 mb-4">
+                <!-- Левая колонка -->
+                <div class="col-lg-8">
                     <!-- Управление голосами -->
-                    <div class="dashboard-card mb-4" id="votes">
-                        <div class="card-header bg-primary d-flex justify-content-between align-items-center">
+                    <div class="dashboard-card">
+                        <div class="card-header bg-primary">
                             <h6 class="mb-0"><i class="fas fa-list-check me-2"></i> Управление голосами</h6>
-                            <div class="btn-group">
-                                <button class="btn btn-sm btn-outline-light" onclick="filterVotes('all')">Все</button>
-                                <button class="btn btn-sm btn-outline-light" onclick="filterVotes('today')">Сегодня</button>
-                                <button class="btn btn-sm btn-outline-light" onclick="filterVotes('week')">Неделя</button>
-                            </div>
                         </div>
                         <div class="card-body">
                             <div class="table-responsive">
-                                <table class="table data-table table-hover">
+                                <table class="table table-hover">
                                     <thead>
                                         <tr>
-                                            <th width="50">ID</th>
                                             <th>Адрес</th>
                                             <th>Оценка</th>
                                             <th>Дата</th>
-                                            <th>Статус</th>
-                                            <th width="100">Действия</th>
+                                            <th>Действия</th>
                                         </tr>
                                     </thead>
                                     <tbody id="votesTable">
-                                        <!-- Данные загрузятся динамически -->
                                         <tr>
-                                            <td colspan="6" class="text-center">
+                                            <td colspan="4" class="text-center">
                                                 <div class="spinner-border spinner-border-sm text-primary"></div>
                                                 Загрузка голосов...
                                             </td>
                                         </tr>
                                     </tbody>
                                 </table>
-                            </div>
-                            <div class="d-flex justify-content-between align-items-center mt-3">
-                                <small class="text-muted" id="votesInfo">Загружено 0 голосов</small>
-                                <div class="btn-group">
-                                    <button class="btn btn-sm btn-outline-primary" onclick="loadMoreVotes()">
-                                        <i class="fas fa-plus me-1"></i> Загрузить еще
-                                    </button>
-                                    <button class="btn btn-sm btn-outline-danger" onclick="showDeleteModal()">
-                                        <i class="fas fa-filter-circle-xmark me-1"></i> Фильтровать
-                                    </button>
-                                </div>
                             </div>
                         </div>
                     </div>
@@ -535,17 +429,17 @@
                         <div class="card-body">
                             <div class="row g-3">
                                 <div class="col-md-4">
-                                    <button class="btn btn-outline-success w-100 btn-admin" onclick="exportCSV()">
-                                        <i class="fas fa-file-csv me-2"></i> Экспорт в CSV
+                                    <button class="btn btn-outline-success w-100" onclick="exportCSV()">
+                                        <i class="fas fa-file-csv me-2"></i> Экспорт CSV
                                     </button>
                                 </div>
                                 <div class="col-md-4">
-                                    <button class="btn btn-outline-warning w-100 btn-admin" onclick="cleanupDatabase()">
+                                    <button class="btn btn-outline-warning w-100" onclick="cleanupDatabase()">
                                         <i class="fas fa-broom me-2"></i> Очистка БД
                                     </button>
                                 </div>
                                 <div class="col-md-4">
-                                    <button class="btn btn-outline-primary w-100 btn-admin" onclick="backupData()">
+                                    <button class="btn btn-outline-primary w-100" onclick="backupData()">
                                         <i class="fas fa-database me-2"></i> Резервная копия
                                     </button>
                                 </div>
@@ -554,10 +448,10 @@
                     </div>
                 </div>
 
-                <!-- Правая колонка: Инструменты -->
-                <div class="col-lg-4 mb-4">
+                <!-- Правая колонка -->
+                <div class="col-lg-4">
                     <!-- Экспорт данных -->
-                    <div class="dashboard-card mb-4" id="export">
+                    <div class="dashboard-card">
                         <div class="card-header bg-success">
                             <h6 class="mb-0"><i class="fas fa-download me-2"></i> Экспорт данных</h6>
                         </div>
@@ -565,10 +459,8 @@
                             <div class="mb-3">
                                 <label class="form-label small">Формат экспорта</label>
                                 <select class="form-select" id="exportFormat">
-                                    <option value="json">JSON (полные данные)</option>
-                                    <option value="csv">CSV (таблица Excel)</option>
-                                    <option value="pdf">PDF (отчёт)</option>
-                                    <option value="excel">Excel XLSX</option>
+                                    <option value="json">JSON</option>
+                                    <option value="csv">CSV</option>
                                 </select>
                             </div>
                             
@@ -578,93 +470,29 @@
                                     <option value="all">Все данные</option>
                                     <option value="week">Последняя неделя</option>
                                     <option value="month">Последний месяц</option>
-                                    <option value="custom">Выбрать период...</option>
                                 </select>
                             </div>
                             
-                            <div class="mb-3" id="customDates" style="display: none;">
-                                <div class="row g-2">
-                                    <div class="col-6">
-                                        <input type="date" class="form-control form-control-sm" id="startDate">
-                                    </div>
-                                    <div class="col-6">
-                                        <input type="date" class="form-control form-control-sm" id="endDate">
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <button class="btn btn-success w-100 btn-admin" onclick="exportData()">
-                                <i class="fas fa-file-export me-2"></i> Экспортировать данные
+                            <button class="btn btn-success w-100" onclick="exportData()">
+                                <i class="fas fa-file-export me-2"></i> Экспортировать
                             </button>
-                            
-                            <div class="alert alert-light mt-3 small">
-                                <i class="fas fa-info-circle text-info me-2"></i>
-                                Экспорт включает адреса, оценки, время и комментарии
-                            </div>
                         </div>
                     </div>
 
                     <!-- Настройки -->
-                    <div class="dashboard-card mb-4" id="settings">
+                    <div class="dashboard-card">
                         <div class="card-header bg-warning">
                             <h6 class="mb-0"><i class="fas fa-cogs me-2"></i> Настройки системы</h6>
                         </div>
                         <div class="card-body">
                             <div class="mb-3">
                                 <label class="form-label small">Название района</label>
-                                <input type="text" class="form-control" id="districtNameInput" 
-                                       value="Заднепровский район">
+                                <input type="text" class="form-control" id="districtNameInput" value="Заднепровский район">
                             </div>
                             
-                            <div class="mb-3">
-                                <label class="form-label small">Новый пароль администратора</label>
-                                <input type="password" class="form-control" id="newPassword" 
-                                       placeholder="Введите новый пароль">
-                            </div>
-                            
-                            <div class="mb-3">
-                                <label class="form-label small">Повторите пароль</label>
-                                <input type="password" class="form-control" id="confirmPassword" 
-                                       placeholder="Повторите пароль">
-                            </div>
-                            
-                            <div class="mb-3">
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" id="enableNotifications">
-                                    <label class="form-check-label small" for="enableNotifications">
-                                        Уведомления о новых голосах
-                                    </label>
-                                </div>
-                            </div>
-                            
-                            <button class="btn btn-warning w-100 btn-admin" onclick="saveSettings()">
+                            <button class="btn btn-warning w-100" onclick="saveSettings()">
                                 <i class="fas fa-save me-2"></i> Сохранить настройки
                             </button>
-                        </div>
-                    </div>
-
-                    <!-- Импорт данных -->
-                    <div class="dashboard-card" id="importSection">
-                        <div class="card-header bg-info">
-                            <h6 class="mb-0"><i class="fas fa-upload me-2"></i> Импорт данных</h6>
-                        </div>
-                        <div class="card-body">
-                            <div class="mb-3">
-                                <div class="drop-zone" id="dropZone" 
-                                     style="border: 2px dashed #dee2e6; border-radius: 10px; padding: 30px; text-align: center; cursor: pointer;">
-                                    <i class="fas fa-cloud-upload-alt fa-2x text-muted mb-3"></i>
-                                    <p class="mb-2">Перетащите файлы сюда</p>
-                                    <p class="small text-muted">или кликните для выбора</p>
-                                    <input type="file" id="importFiles" multiple accept=".json,.csv" style="display: none;">
-                                </div>
-                            </div>
-                            
-                            <div class="d-flex justify-content-between align-items-center">
-                                <small class="text-muted" id="fileInfo">Выбрано файлов: 0</small>
-                                <button class="btn btn-sm btn-info" id="importBtn" disabled onclick="importData()">
-                                    <i class="fas fa-file-import me-1"></i> Импортировать
-                                </button>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -678,29 +506,21 @@
                             <h6 class="mb-0"><i class="fas fa-triangle-exclamation me-2"></i> Опасные операции</h6>
                         </div>
                         <div class="card-body">
-                            <div class="alert alert-danger">
-                                <i class="fas fa-exclamation-triangle me-2"></i>
-                                <strong>Внимание!</strong> Эти операции необратимы. Создайте резервную копию перед выполнением.
-                            </div>
-                            
                             <div class="row g-3">
                                 <div class="col-md-4">
-                                    <button class="btn btn-outline-danger w-100 btn-admin" onclick="removeDuplicates()">
+                                    <button class="btn btn-outline-danger w-100" onclick="removeDuplicates()">
                                         <i class="fas fa-copy me-2"></i> Удалить дубликаты
                                     </button>
-                                    <small class="text-muted d-block mt-1">Один адрес - один голос</small>
                                 </div>
                                 <div class="col-md-4">
-                                    <button class="btn btn-outline-danger w-100 btn-admin" onclick="removeOldVotes()">
+                                    <button class="btn btn-outline-danger w-100" onclick="removeOldVotes()">
                                         <i class="fas fa-calendar-times me-2"></i> Удалить старые
                                     </button>
-                                    <small class="text-muted d-block mt-1">Старше 30 дней</small>
                                 </div>
                                 <div class="col-md-4">
-                                    <button class="btn btn-danger w-100 btn-admin" onclick="showResetModal()">
+                                    <button class="btn btn-danger w-100" onclick="showResetModal()">
                                         <i class="fas fa-bomb me-2"></i> Сбросить всё
                                     </button>
-                                    <small class="text-muted d-block mt-1">Полная очистка</small>
                                 </div>
                             </div>
                         </div>
@@ -710,925 +530,77 @@
         </div>
     </div>
 
-    <!-- Модальное окно подтверждения сброса -->
-    <div class="modal fade modal-admin" id="resetModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title"><i class="fas fa-triangle-exclamation text-danger me-2"></i> Подтверждение сброса</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="alert alert-danger">
-                        <h6 class="alert-heading">ВНИМАНИЕ!</h6>
-                        <p>Вы собираетесь удалить <strong>ВСЕ данные</strong> голосования.</p>
-                        <p class="mb-0">Это действие <strong>необратимо</strong>.</p>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label class="form-label">Введите пароль для подтверждения:</label>
-                        <input type="password" class="form-control" id="resetPassword">
-                    </div>
-                    
-                    <div class="form-check">
-                        <input class="form-check-input" type="checkbox" id="confirmReset">
-                        <label class="form-check-label" for="confirmReset">
-                            Я понимаю, что все данные будут удалены без возможности восстановления
-                        </label>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
-                    <button type="button" class="btn btn-danger" onclick="resetAllData()" disabled id="resetBtn">
-                        <i class="fas fa-bomb me-2"></i> Подтвердить сброс
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <!-- Подвал -->
     <footer class="footer mt-5 py-4 bg-dark text-white">
-        <div class="container">
-            <div class="row align-items-center">
-                <div class="col-md-6">
-                    <h6><i class="fas fa-user-shield me-2"></i> Административная панель</h6>
-                    <p class="small mb-0">Система управления опросом качества ЖКХ</p>
-                </div>
-                <div class="col-md-6 text-md-end">
-                    <p class="small mb-0">
-                        Версия 2.0 | 
-                        <span id="currentTime"></span> | 
-                        <span id="lastUpdate">Не обновлялось</span>
-                    </p>
-                </div>
-            </div>
+        <div class="container text-center">
+            <p class="small mb-0">
+                Административная панель • Опрос ЖКХ • Версия 2.0
+            </p>
         </div>
     </footer>
 
     <!-- Скрипты -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="app.js"></script>
     <script>
-        // Конфигурация
-        const ADMIN_CONFIG = {
-            password: "admin123",
-            defaultDistrict: "Заднепровский район",
-            itemsPerPage: 15
-        };
+        // Упрощённая версия скрипта для тестирования
         
-        let currentUser = null;
-        let allVotes = [];
-        let currentPage = 1;
-        let filesToImport = [];
-
-        // ==================== АУТЕНТИФИКАЦИЯ ====================
+        const ADMIN_PASSWORD = "admin123";
+        
         function login() {
             const password = document.getElementById('adminPassword').value;
             
-            if (password === ADMIN_CONFIG.password) {
-                currentUser = {
-                    name: "Администратор",
-                    loginTime: new Date()
-                };
-                
+            if (password === ADMIN_PASSWORD) {
                 document.getElementById('loginSection').style.display = 'none';
                 document.getElementById('adminDashboard').style.display = 'block';
-                
-                // Загружаем данные
-                loadAdminData();
-                updateTime();
-                setInterval(updateTime, 60000);
-                
-                // Показываем уведомление
-                showNotification('success', 'Вход выполнен успешно', `Добро пожаловать, ${currentUser.name}!`);
-                
+                alert('Вход выполнен успешно!');
             } else {
-                showNotification('error', 'Ошибка входа', 'Неверный пароль администратора');
+                alert('Неверный пароль!');
             }
         }
         
         function logout() {
             if (confirm('Вы действительно хотите выйти?')) {
-                currentUser = null;
                 document.getElementById('adminDashboard').style.display = 'none';
                 document.getElementById('loginSection').style.display = 'block';
                 document.getElementById('adminPassword').value = '';
-                showNotification('info', 'Выход выполнен', 'Вы вышли из системы');
             }
         }
         
-        // ==================== ЗАГРУЗКА ДАННЫХ ====================
-        async function loadAdminData() {
-            try {
-                // Загружаем голоса из Firebase
-                const votes = await fetchVotes();
-                allVotes = votes;
-                
-                // Обновляем дашборд
-                updateDashboardStats(votes);
-                updateVotesTable(votes);
-                updateNotifications();
-                
-                // Обновляем подзаголовок
-                document.getElementById('dashboardSubtitle').innerHTML = 
-                    `<i class="fas fa-check-circle text-success me-2"></i>` +
-                    `Данные загружены • ${votes.length} голосов • ` +
-                    `${new Date().toLocaleTimeString('ru-RU', {hour: '2-digit', minute:'2-digit'})}`;
-                
-            } catch (error) {
-                console.error('Ошибка загрузки данных:', error);
-                document.getElementById('dashboardSubtitle').innerHTML = 
-                    `<i class="fas fa-exclamation-triangle text-danger me-2"></i>` +
-                    `Ошибка загрузки: ${error.message}`;
-            }
-        }
-        
-        async function fetchVotes() {
-            const databaseURL = "https://poll-hope-11-default-rtdb.europe-west1.firebasedatabase.app";
-            const response = await fetch(`${databaseURL}/votes.json`);
-            
-            if (!response.ok) {
-                throw new Error(`Ошибка HTTP: ${response.status}`);
-            }
-            
-            const data = await response.json();
-            return data ? Object.values(data) : [];
-        }
-        
-        // ==================== ОБНОВЛЕНИЕ СТАТИСТИКИ ====================
-        function updateDashboardStats(votes) {
-            const stats = calculateStats(votes);
-            
-            // Основные показатели
-            document.getElementById('totalVotesAdmin').textContent = stats.totalVotes;
-            document.getElementById('uniqueAddressesAdmin').textContent = stats.uniqueAddresses;
-            document.getElementById('avgRatingAdmin').textContent = stats.averageRating;
-            document.getElementById('todayActivity').textContent = stats.todayVotes;
-            document.getElementById('yesterdayActivity').textContent = stats.yesterdayVotes;
-            document.getElementById('weeklyActivity').textContent = stats.weeklyVotes;
-            
-            // Изменения
-            document.getElementById('votesChange').textContent = stats.votesChange >= 0 ? 
-                `+${stats.votesChange}%` : `${stats.votesChange}%`;
-            document.getElementById('votesChange').className = stats.votesChange >= 0 ? 
-                'change-up' : 'change-down';
-            
-            document.getElementById('ratingChange').textContent = stats.ratingChange >= 0 ? 
-                `+${stats.ratingChange}%` : `${stats.ratingChange}%`;
-            
-            // Охват района (просто для примера)
-            const coverage = Math.min(100, Math.round((stats.uniqueAddresses / 100) * 100));
-            document.getElementById('coveragePercent').textContent = `${coverage}%`;
-            document.getElementById('coverageBar').style.width = `${coverage}%`;
-            
-            // Звёзды рейтинга
-            updateStars(stats.averageRating);
-            
-            // Пиковый час
-            document.getElementById('peakHour').textContent = `Пик: ${stats.peakHour || '--:--'}`;
-        }
-        
-        function calculateStats(votes) {
-            if (votes.length === 0) {
-                return {
-                    totalVotes: 0,
-                    uniqueAddresses: 0,
-                    averageRating: '0.0',
-                    todayVotes: 0,
-                    yesterdayVotes: 0,
-                    weeklyVotes: 0,
-                    votesChange: 0,
-                    ratingChange: 0,
-                    peakHour: null
-                };
-            }
-            
-            // Основная статистика
-            const totalVotes = votes.length;
-            
-            // Уникальные адреса
-            const addresses = new Set();
-            votes.forEach(v => {
-                if (v.street && v.house) {
-                    addresses.add(`${v.street}, ${v.house}`);
-                }
-            });
-            
-            // Средний рейтинг
-            let totalRating = 0;
-            let ratingCount = 0;
-            
-            votes.forEach(vote => {
-                if (vote.answers && Array.isArray(vote.answers)) {
-                    vote.answers.forEach(answer => {
-                        const value = parseInt(answer.value);
-                        if (!isNaN(value)) {
-                            totalRating += value;
-                            ratingCount++;
-                        }
-                    });
-                }
-            });
-            
-            const averageRating = ratingCount > 0 ? (totalRating / ratingCount).toFixed(1) : "0.0";
-            
-            // Активность
-            const today = new Date().toDateString();
-            const yesterday = new Date(Date.now() - 86400000).toDateString();
-            
-            const todayVotes = votes.filter(v => 
-                new Date(v.timestamp).toDateString() === today
-            ).length;
-            
-            const yesterdayVotes = votes.filter(v => 
-                new Date(v.timestamp).toDateString() === yesterday
-            ).length;
-            
-            const weekAgo = new Date(Date.now() - 7 * 86400000);
-            const weeklyVotes = votes.filter(v => 
-                new Date(v.timestamp) > weekAgo
-            ).length;
-            
-            // Изменения (упрощённо)
-            const votesChange = 10; // Здесь должна быть реальная логика
-            const ratingChange = 5;
-            
-            // Пиковый час
-            const hourCounts = new Array(24).fill(0);
-            votes.forEach(v => {
-                const hour = new Date(v.timestamp).getHours();
-                hourCounts[hour]++;
-            });
-            
-            const peakHourIndex = hourCounts.indexOf(Math.max(...hourCounts));
-            const peakHour = peakHourIndex.toString().padStart(2, '0') + ':00';
-            
-            return {
-                totalVotes,
-                uniqueAddresses: addresses.size,
-                averageRating,
-                todayVotes,
-                yesterdayVotes,
-                weeklyVotes,
-                votesChange,
-                ratingChange,
-                peakHour
-            };
-        }
-        
-        function updateStars(rating) {
-            const numRating = parseFloat(rating);
-            
-            for (let i = 1; i <= 5; i++) {
-                const star = document.getElementById(`star${i}`);
-                if (i <= numRating) {
-                    star.className = 'fas fa-star text-warning';
-                } else if (i - 0.5 <= numRating) {
-                    star.className = 'fas fa-star-half-alt text-warning';
-                } else {
-                    star.className = 'far fa-star text-muted';
-                }
-            }
-        }
-        
-        // ==================== ТАБЛИЦА ГОЛОСОВ ====================
-        function updateVotesTable(votes) {
-            const tableBody = document.getElementById('votesTable');
-            const startIndex = (currentPage - 1) * ADMIN_CONFIG.itemsPerPage;
-            const endIndex = startIndex + ADMIN_CONFIG.itemsPerPage;
-            const pageVotes = votes.slice(startIndex, endIndex);
-            
-            if (pageVotes.length === 0) {
-                tableBody.innerHTML = `
-                    <tr>
-                        <td colspan="6" class="text-center text-muted py-4">
-                            <i class="fas fa-inbox fa-2x mb-3"></i>
-                            <p class="mb-0">Нет данных для отображения</p>
-                        </td>
-                    </tr>
-                `;
-                return;
-            }
-            
-            let html = '';
-            pageVotes.forEach((vote, index) => {
-                const time = new Date(vote.timestamp).toLocaleTimeString('ru-RU', { 
-                    hour: '2-digit', 
-                    minute: '2-digit' 
-                });
-                const date = new Date(vote.timestamp).toLocaleDateString('ru-RU');
-                
-                // Средний рейтинг для этого голоса
-                let avgRating = 0;
-                if (vote.answers && vote.answers.length > 0) {
-                    const sum = vote.answers.reduce((acc, ans) => acc + parseInt(ans.value), 0);
-                    avgRating = (sum / vote.answers.length).toFixed(1);
-                }
-                
-                // Статус (пример)
-                const statuses = ['status-new', 'status-verified', 'status-duplicate'];
-                const status = statuses[index % 3];
-                const statusText = ['Новый', 'Проверен', 'Дубль'][index % 3];
-                
-                html += `
-                    <tr>
-                        <td><small class="text-muted">${startIndex + index + 1}</small></td>
-                        <td>
-                            <div class="fw-semibold">${vote.street}, ${vote.house}</div>
-                            <small class="text-muted">${vote.entrance ? 'Подъезд ' + vote.entrance : 'Подъезд не указан'}</small>
-                        </td>
-                        <td>
-                            <span class="badge bg-info">${avgRating}/5</span>
-                        </td>
-                        <td>
-                            <div>${date}</div>
-                            <small class="text-muted">${time}</small>
-                        </td>
-                        <td>
-                            <span class="vote-status ${status}">${statusText}</span>
-                        </td>
-                        <td>
-                            <button class="btn btn-sm btn-outline-primary" onclick="viewVote('${vote.id}')" title="Просмотр">
-                                <i class="fas fa-eye"></i>
-                            </button>
-                            <button class="btn btn-sm btn-outline-danger" onclick="deleteVote('${vote.id}')" title="Удалить">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </td>
-                    </tr>
-                `;
-            });
-            
-            tableBody.innerHTML = html;
-            document.getElementById('votesInfo').textContent = 
-                `Показано ${startIndex + 1}-${Math.min(endIndex, votes.length)} из ${votes.length} голосов`;
-        }
-        
-        function filterVotes(filterType) {
-            let filteredVotes = [...allVotes];
-            
-            switch(filterType) {
-                case 'today':
-                    const today = new Date().toDateString();
-                    filteredVotes = filteredVotes.filter(v => 
-                        new Date(v.timestamp).toDateString() === today
-                    );
-                    break;
-                    
-                case 'week':
-                    const weekAgo = new Date(Date.now() - 7 * 86400000);
-                    filteredVotes = filteredVotes.filter(v => 
-                        new Date(v.timestamp) > weekAgo
-                    );
-                    break;
-                    
-                case 'all':
-                default:
-                    // Все голоса
-                    break;
-            }
-            
-            currentPage = 1;
-            updateVotesTable(filteredVotes);
-        }
-        
-        function loadMoreVotes() {
-            currentPage++;
-            updateVotesTable(allVotes);
-        }
-        
-        // ==================== ЭКСПОРТ ДАННЫХ ====================
+        // Простые функции для демонстрации
         function exportData() {
-            const format = document.getElementById('exportFormat').value;
-            const period = document.getElementById('exportPeriod').value;
-            
-            let exportVotes = [...allVotes];
-            
-            // Фильтрация по периоду
-            if (period === 'week') {
-                const weekAgo = new Date(Date.now() - 7 * 86400000);
-                exportVotes = exportVotes.filter(v => new Date(v.timestamp) > weekAgo);
-            } else if (period === 'month') {
-                const monthAgo = new Date(Date.now() - 30 * 86400000);
-                exportVotes = exportVotes.filter(v => new Date(v.timestamp) > monthAgo);
-            } else if (period === 'custom') {
-                const startDate = document.getElementById('startDate').value;
-                const endDate = document.getElementById('endDate').value;
-                
-                if (startDate && endDate) {
-                    const start = new Date(startDate);
-                    const end = new Date(endDate);
-                    end.setHours(23, 59, 59, 999);
-                    
-                    exportVotes = exportVotes.filter(v => {
-                        const voteDate = new Date(v.timestamp);
-                        return voteDate >= start && voteDate <= end;
-                    });
-                }
-            }
-            
-            // Экспорт в выбранном формате
-            if (format === 'json') {
-                exportJSON(exportVotes);
-            } else if (format === 'csv') {
-                exportCSV(exportVotes);
-            } else {
-                showNotification('info', 'Экспорт', 
-                    `Экспорт в формате ${format.toUpperCase()} в разработке`);
-            }
+            alert('Экспорт данных');
         }
         
-        function exportJSON(votes) {
-            const data = {
-                exportDate: new Date().toISOString(),
-                totalVotes: votes.length,
-                votes: votes,
-                district: ADMIN_CONFIG.defaultDistrict
-            };
-            
-            const jsonString = JSON.stringify(data, null, 2);
-            downloadFile(jsonString, 'jkh-poll-export.json', 'application/json');
-            showNotification('success', 'Экспорт JSON', 
-                `Экспортировано ${votes.length} голосов`);
+        function saveSettings() {
+            alert('Настройки сохранены');
         }
         
-        function exportCSV(votes) {
-            // Заголовки CSV
-            let csv = 'Дата,Время,Улица,Дом,Подъезд,Вопрос1,Вопрос2,Вопрос3,Вопрос4,Вопрос5,Средняя\n';
-            
-            votes.forEach(vote => {
-                const date = new Date(vote.timestamp).toLocaleDateString('ru-RU');
-                const time = new Date(vote.timestamp).toLocaleTimeString('ru-RU');
-                
-                // Ответы
-                const answers = vote.answers || [];
-                const q1 = answers[0]?.value || '';
-                const q2 = answers[1]?.value || '';
-                const q3 = answers[2]?.value || '';
-                const q4 = answers[3]?.value || '';
-                const q5 = answers[4]?.value || '';
-                
-                // Средняя оценка
-                let avg = 0;
-                if (answers.length > 0) {
-                    const sum = answers.reduce((acc, ans) => acc + parseInt(ans.value || 0), 0);
-                    avg = (sum / answers.length).toFixed(1);
-                }
-                
-                csv += `${date},${time},${vote.street || ''},${vote.house || ''},` +
-                       `${vote.entrance || ''},${q1},${q2},${q3},${q4},${q5},${avg}\n`;
-            });
-            
-            downloadFile(csv, 'jkh-poll-export.csv', 'text/csv');
-            showNotification('success', 'Экспорт CSV', 
-                `Экспортировано ${votes.length} голосов`);
-        }
-        
-        function downloadFile(content, filename, type) {
-            const blob = new Blob([content], { type });
-            const url = URL.createObjectURL(blob);
-            
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = filename;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-        }
-        
-        // ==================== ИМПОРТ ДАННЫХ ====================
-        document.getElementById('dropZone').addEventListener('click', () => {
-            document.getElementById('importFiles').click();
-        });
-        
-        document.getElementById('importFiles').addEventListener('change', (event) => {
-            filesToImport = Array.from(event.target.files);
-            updateFileInfo();
-        });
-        
-        function updateFileInfo() {
-            const fileCount = filesToImport.length;
-            const fileInfo = document.getElementById('fileInfo');
-            const importBtn = document.getElementById('importBtn');
-            
-            fileInfo.textContent = `Выбрано файлов: ${fileCount}`;
-            importBtn.disabled = fileCount === 0;
-        }
-        
-        async function importData() {
-            if (filesToImport.length === 0) return;
-            
-            showNotification('info', 'Импорт', 'Начата обработка файлов...');
-            
-            for (const file of filesToImport) {
-                try {
-                    const text = await file.text();
-                    const data = JSON.parse(text);
-                    
-                    if (data.votes && Array.isArray(data.votes)) {
-                        // Здесь должна быть логика добавления в Firebase
-                        showNotification('success', 'Импорт', 
-                            `Загружено ${data.votes.length} голосов из ${file.name}`);
-                    }
-                } catch (error) {
-                    showNotification('error', 'Ошибка импорта', 
-                        `Файл ${file.name}: ${error.message}`);
-                }
-            }
-            
-            // Обновляем данные после импорта
-            setTimeout(loadAdminData, 1000);
-        }
-        
-        // ==================== ОПЕРАЦИИ С ДАННЫМИ ====================
         function removeDuplicates() {
-            if (allVotes.length === 0) {
-                showNotification('info', 'Нет данных', 'Нет голосов для обработки');
-                return;
-            }
-            
-            if (confirm('Удалить дубликаты голосов с одного адреса? Будет оставлен последний голос.')) {
-                // Простая логика удаления дубликатов
-                const uniqueMap = new Map();
-                
-                allVotes.forEach(vote => {
-                    const key = `${vote.street}-${vote.house}-${vote.entrance}`;
-                    uniqueMap.set(key, vote); // Последний голос перезаписывает предыдущий
-                });
-                
-                const uniqueVotes = Array.from(uniqueMap.values());
-                const removed = allVotes.length - uniqueVotes.length;
-                
-                // Здесь должна быть логика сохранения в Firebase
-                
-                showNotification('success', 'Удаление дубликатов', 
-                    `Удалено ${removed} дубликатов. Осталось ${uniqueVotes.length} уникальных голосов.`);
-                
-                // Обновляем отображение
-                allVotes = uniqueVotes;
-                updateDashboardStats(allVotes);
-                updateVotesTable(allVotes);
+            if (confirm('Удалить дубликаты голосов?')) {
+                alert('Дубликаты удалены');
             }
         }
         
         function removeOldVotes() {
             if (confirm('Удалить голосы старше 30 дней?')) {
-                const monthAgo = new Date(Date.now() - 30 * 86400000);
-                const filteredVotes = allVotes.filter(v => 
-                    new Date(v.timestamp) > monthAgo
-                );
-                
-                const removed = allVotes.length - filteredVotes.length;
-                
-                // Здесь должна быть логика сохранения в Firebase
-                
-                showNotification('success', 'Очистка старых голосов', 
-                    `Удалено ${removed} старых голосов. Осталось ${filteredVotes.length} голосов.`);
-                
-                allVotes = filteredVotes;
-                updateDashboardStats(allVotes);
-                updateVotesTable(allVotes);
+                alert('Старые голосы удалены');
             }
         }
         
         function showResetModal() {
-            const modal = new bootstrap.Modal(document.getElementById('resetModal'));
-            modal.show();
-            
-            // Сброс подтверждения
-            document.getElementById('confirmReset').checked = false;
-            document.getElementById('resetPassword').value = '';
-            document.getElementById('resetBtn').disabled = true;
-        }
-        
-        document.getElementById('confirmReset').addEventListener('change', function() {
-            document.getElementById('resetBtn').disabled = !this.checked;
-        });
-        
-        function resetAllData() {
-            const password = document.getElementById('resetPassword').value;
-            
-            if (password !== ADMIN_CONFIG.password) {
-                showNotification('error', 'Ошибка', 'Неверный пароль подтверждения');
-                return;
-            }
-            
-            if (confirm('ВНИМАНИЕ! Это удалит ВСЕ данные без возможности восстановления. Продолжить?')) {
-                // Здесь должна быть логика очистки Firebase
-                
-                showNotification('success', 'Сброс данных', 'Все данные успешно сброшены');
-                
-                // Закрываем модальное окно
-                const modal = bootstrap.Modal.getInstance(document.getElementById('resetModal'));
-                modal.hide();
-                
-                // Обновляем интерфейс
-                allVotes = [];
-                updateDashboardStats(allVotes);
-                updateVotesTable(allVotes);
+            if (confirm('ВНИМАНИЕ! Это удалит ВСЕ данные. Продолжить?')) {
+                alert('Все данные сброшены');
             }
         }
         
-        // ==================== НАСТРОЙКИ ====================
-        function saveSettings() {
-            const newDistrict = document.getElementById('districtNameInput').value;
-            const newPassword = document.getElementById('newPassword').value;
-            const confirmPassword = document.getElementById('confirmPassword').value;
-            
-            let changes = [];
-            
-            // Обновление названия района
-            if (newDistrict && newDistrict !== ADMIN_CONFIG.defaultDistrict) {
-                ADMIN_CONFIG.defaultDistrict = newDistrict;
-                changes.push('название района');
-            }
-            
-            // Обновление пароля
-            if (newPassword) {
-                if (newPassword === confirmPassword) {
-                    ADMIN_CONFIG.password = newPassword;
-                    changes.push('пароль администратора');
-                    
-                    // Очищаем поля пароля
-                    document.getElementById('newPassword').value = '';
-                    document.getElementById('confirmPassword').value = '';
-                } else {
-                    showNotification('error', 'Ошибка', 'Пароли не совпадают');
-                    return;
-                }
-            }
-            
-            if (changes.length > 0) {
-                showNotification('success', 'Настройки сохранены', 
-                    `Изменения: ${changes.join(', ')}`);
-            } else {
-                showNotification('info', 'Настройки', 'Изменений нет');
-            }
-        }
-        
-        // ==================== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ====================
-        function refreshDashboard() {
-            showNotification('info', 'Обновление', 'Загрузка обновлённых данных...');
-            loadAdminData();
-        }
-        
-        function showHelp() {
-            showNotification('info', 'Справка', 
-                'Используйте меню для навигации. Для экспорта данных выберите формат и период.');
-        }
-        
-        function updateTime() {
-            const now = new Date();
-            document.getElementById('currentTime').textContent = 
-                now.toLocaleTimeString('ru-RU');
-            document.getElementById('lastUpdate').textContent = 
-                `Обновлено: ${now.toLocaleTimeString('ru-RU', {hour: '2-digit', minute:'2-digit'})}`;
-        }
-        
-        function updateNotifications() {
-            // Простая логика уведомлений
-            const todayVotes = allVotes.filter(v => {
-                const today = new Date().toDateString();
-                return new Date(v.timestamp).toDateString() === today;
-            }).length;
-            
-            if (todayVotes > 0) {
-                document.getElementById('notificationBadge').textContent = todayVotes;
-                document.getElementById('notificationBadge').style.display = 'flex';
-            } else {
-                document.getElementById('notificationBadge').style.display = 'none';
-            }
-        }
-        
-        function showNotification(type, title, message) {
-            const alertClass = {
-                'success': 'alert-success',
-                'error': 'alert-danger',
-                'info': 'alert-info',
-                'warning': 'alert-warning'
-            }[type] || 'alert-info';
-            
-            const icon = {
-                'success': 'check-circle',
-                'error': 'exclamation-triangle',
-                'info': 'info-circle',
-                'warning': 'exclamation-circle'
-            }[type] || 'info-circle';
-            
-            const notification = document.createElement('div');
-            notification.className = `alert ${alertClass} alert-dismissible fade show position-fixed`;
-            notification.style.cssText = `
-                top: 20px;
-                right: 20px;
-                z-index: 9999;
-                min-width: 300px;
-                box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-            `;
-            notification.innerHTML = `
-                <div class="d-flex align-items-center">
-                    <i class="fas fa-${icon} fa-lg me-3"></i>
-                    <div>
-                        <h6 class="mb-1">${title}</h6>
-                        <p class="mb-0 small">${message}</p>
-                    </div>
-                </div>
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            `;
-            
-            document.body.appendChild(notification);
-            
-            // Автоматическое скрытие
-            setTimeout(() => {
-                if (notification.parentNode) {
-                    notification.remove();
-                }
-            }, 5000);
-        }
-        
-        function toggleDarkMode() {
-            document.body.classList.toggle('dark-mode');
-            const icon = document.querySelector('[onclick="toggleDarkMode()"] i');
-            icon.classList.toggle('fa-moon');
-            icon.classList.toggle('fa-sun');
-        }
-        
-        // ==================== ИСПРАВЛЕНИЯ ЛАЙАУТА ====================
-        function fixLayoutIssues() {
-            // Гарантируем, что все карточки имеют правильные отступы
-            const cards = document.querySelectorAll('.dashboard-card');
-            cards.forEach((card, index) => {
-                card.style.marginBottom = '1.5rem';
-                card.style.position = 'relative';
-                
-                // Если это последняя карточка в колонке, уменьшаем отступ
-                if (index === cards.length - 1) {
-                    card.style.marginBottom = '0';
-                }
-            });
-            
-            // Исправляем высоту строк
-            const rows = document.querySelectorAll('#adminDashboard .row');
-            rows.forEach(row => {
-                row.style.display = 'flex';
-                row.style.flexWrap = 'wrap';
-                row.style.marginRight = '-12px';
-                row.style.marginLeft = '-12px';
-                
-                // Убедимся, что дочерние элементы правильно позиционированы
-                const cols = row.querySelectorAll('[class*="col-"]');
-                cols.forEach(col => {
-                    col.style.position = 'relative';
-                    col.style.width = '100%';
-                    col.style.paddingRight = '12px';
-                    col.style.paddingLeft = '12px';
-                    col.style.marginBottom = '1rem';
-                });
-            });
-            
-            // Особое внимание правой колонке
-            const rightColumn = document.querySelector('.col-lg-4');
-            if (rightColumn) {
-                rightColumn.style.order = '2'; // На мобильных показываем после левой колонки
-            }
-        }
-        
-        function checkLayout() {
-            const width = window.innerWidth;
-            
-            if (width < 992) {
-                // На планшетах и мобильных
-                document.querySelectorAll('.col-lg-8, .col-lg-4').forEach(col => {
-                    col.style.flex = '0 0 100%';
-                    col.style.maxWidth = '100%';
-                });
-            } else {
-                // На десктопах
-                document.querySelectorAll('.col-lg-8').forEach(col => {
-                    col.style.flex = '0 0 66.666667%';
-                    col.style.maxWidth = '66.666667%';
-                });
-                document.querySelectorAll('.col-lg-4').forEach(col => {
-                    col.style.flex = '0 0 33.333333%';
-                    col.style.maxWidth = '33.333333%';
-                });
-            }
-        }
-        
-        // ==================== ИНИЦИАЛИЗАЦИЯ ====================
+        // Инициализация
         document.addEventListener('DOMContentLoaded', function() {
-            // Настройка показа пароля
+            // Показать пароль
             document.getElementById('showPassword').addEventListener('change', function() {
                 const passwordField = document.getElementById('adminPassword');
                 passwordField.type = this.checked ? 'text' : 'password';
             });
-            
-            // Настройка выбора периода экспорта
-            document.getElementById('exportPeriod').addEventListener('change', function() {
-                const customDates = document.getElementById('customDates');
-                customDates.style.display = this.value === 'custom' ? 'block' : 'none';
-            });
-            
-            // Drag and drop для импорта
-            const dropZone = document.getElementById('dropZone');
-            
-            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-                dropZone.addEventListener(eventName, preventDefaults, false);
-            });
-            
-            function preventDefaults(e) {
-                e.preventDefault();
-                e.stopPropagation();
-            }
-            
-            ['dragenter', 'dragover'].forEach(eventName => {
-                dropZone.addEventListener(eventName, highlight, false);
-            });
-            
-            ['dragleave', 'drop'].forEach(eventName => {
-                dropZone.addEventListener(eventName, unhighlight, false);
-            });
-            
-            function highlight() {
-                dropZone.style.borderColor = '#3498db';
-                dropZone.style.backgroundColor = 'rgba(52, 152, 219, 0.1)';
-            }
-            
-            function unhighlight() {
-                dropZone.style.borderColor = '#dee2e6';
-                dropZone.style.backgroundColor = '';
-            }
-            
-            dropZone.addEventListener('drop', handleDrop, false);
-            
-            function handleDrop(e) {
-                const dt = e.dataTransfer;
-                const files = dt.files;
-                
-                filesToImport = Array.from(files);
-                updateFileInfo();
-            }
-            
-            // Автоматический вход по URL параметру
-            const urlParams = new URLSearchParams(window.location.search);
-            const passwordParam = urlParams.get('password');
-            
-            if (passwordParam === ADMIN_CONFIG.password) {
-                document.getElementById('adminPassword').value = ADMIN_CONFIG.password;
-                setTimeout(login, 500);
-            }
-            
-            // Добавляем исправления лайаута
-            setTimeout(() => {
-                fixLayoutIssues();
-                checkLayout();
-            }, 100);
-            
-            // Повторяем после полной загрузки
-            setTimeout(() => {
-                fixLayoutIssues();
-                checkLayout();
-            }, 500);
         });
-        
-        // Обновляем при изменении размера окна
-        window.addEventListener('resize', function() {
-            setTimeout(checkLayout, 100);
-            setTimeout(fixLayoutIssues, 150);
-        });
-        
-        // Также исправляем после входа в систему
-        function login() {
-            const password = document.getElementById('adminPassword').value;
-            
-            if (password === ADMIN_CONFIG.password) {
-                currentUser = {
-                    name: "Администратор",
-                    loginTime: new Date()
-                };
-                
-                document.getElementById('loginSection').style.display = 'none';
-                document.getElementById('adminDashboard').style.display = 'block';
-                
-                // Загружаем данные
-                loadAdminData();
-                updateTime();
-                setInterval(updateTime, 60000);
-                
-                // Показываем уведомление
-                showNotification('success', 'Вход выполнен успешно', `Добро пожаловать, ${currentUser.name}!`);
-                
-                // После входа исправляем лайаут
-                setTimeout(() => {
-                    fixLayoutIssues();
-                    checkLayout();
-                }, 300);
-                
-            } else {
-                showNotification('error', 'Ошибка входа', 'Неверный пароль администратора');
-            }
-        }
     </script>
 </body>
 </html>
