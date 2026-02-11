@@ -6,11 +6,8 @@
     <title>Результаты опроса</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link rel="stylesheet" href="style.css">
     <style>
         body { padding: 20px; background: linear-gradient(135deg, #f5f7fa 0%, #e4edf5 100%); }
-        
-        /* Стили для карточек статистики */
         .stat-card {
             border: none;
             border-radius: 15px;
@@ -18,31 +15,13 @@
             height: 100%;
             box-shadow: 0 5px 15px rgba(0,0,0,0.08);
         }
-        
         .stat-card:hover {
             transform: translateY(-5px);
             box-shadow: 0 8px 25px rgba(0,0,0,0.15);
         }
-        
-        .stat-icon {
-            font-size: 2.5rem;
-            opacity: 0.9;
-        }
-        
-        .stat-number {
-            font-size: 2.2rem;
-            font-weight: 700;
-            margin: 10px 0;
-        }
-        
-        .stat-label {
-            font-size: 0.9rem;
-            color: #ffffff;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-        
-        /* Стили для диаграмм */
+        .stat-icon { font-size: 2.5rem; opacity: 0.9; }
+        .stat-number { font-size: 2.2rem; font-weight: 700; margin: 10px 0; }
+        .stat-label { font-size: 0.9rem; color: #ffffff; text-transform: uppercase; letter-spacing: 1px; }
         .chart-container {
             background: white;
             border-radius: 15px;
@@ -50,30 +29,13 @@
             box-shadow: 0 5px 15px rgba(0,0,0,0.08);
             margin-bottom: 20px;
         }
-        
-        .progress-container {
-            margin: 15px 0;
-        }
-        
-        .progress-label {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 5px;
-        }
-        
-        .rating-count {
-            font-size: 0.85rem;
-            color: #6c757d;
-        }
-        
-        /* Цвета для оценок */
+        .progress-label { display: flex; justify-content: space-between; margin-bottom: 5px; }
+        .rating-count { font-size: 0.85rem; color: #6c757d; }
         .rating-1 { background: linear-gradient(90deg, #dc3545, #e76b77); }
         .rating-2 { background: linear-gradient(90deg, #fd7e14, #ff9e50); }
         .rating-3 { background: linear-gradient(90deg, #ffc107, #ffd55a); }
         .rating-4 { background: linear-gradient(90deg, #20c997, #4cd9b1); }
         .rating-5 { background: linear-gradient(90deg, #198754, #28a745); }
-        
-        /* Стили для последних голосов */
         .vote-card {
             border: 1px solid #e9ecef;
             border-radius: 10px;
@@ -81,22 +43,9 @@
             transition: all 0.3s ease;
             background: white;
         }
-        
-        .vote-card:hover {
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-        }
-        
-        .vote-street {
-            font-weight: 600;
-            color: #2c3e50;
-        }
-        
-        .vote-time {
-            font-size: 0.85rem;
-            color: #6c757d;
-        }
-        
-        /* Адаптивные стили */
+        .vote-card:hover { box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        .vote-street { font-weight: 600; color: #2c3e50; }
+        .vote-time { font-size: 0.85rem; color: #6c757d; }
         @media (max-width: 768px) {
             .stat-number { font-size: 1.8rem; }
             .stat-icon { font-size: 2rem; }
@@ -132,52 +81,41 @@
             </div>
         </div>
 
-        <!-- Шаблон для результатов (скрыт по умолчанию) -->
+        <!-- Шаблон для результатов -->
         <div id="resultsTemplate" style="display: none;">
             <!-- Статистика вверху -->
             <div class="row mb-4 fade-in">
                 <div class="col-md-3 mb-3">
                     <div class="stat-card bg-primary text-white">
                         <div class="card-body text-center">
-                            <div class="stat-icon mb-2">
-                                <i class="fas fa-users"></i>
-                            </div>
+                            <div class="stat-icon mb-2"><i class="fas fa-users"></i></div>
                             <div class="stat-number" id="totalVotesStat">0</div>
                             <div class="stat-label">Всего голосов</div>
                         </div>
                     </div>
                 </div>
-                
                 <div class="col-md-3 mb-3">
                     <div class="stat-card bg-success text-white">
                         <div class="card-body text-center">
-                            <div class="stat-icon mb-2">
-                                <i class="fas fa-home"></i>
-                            </div>
+                            <div class="stat-icon mb-2"><i class="fas fa-home"></i></div>
                             <div class="stat-number" id="uniqueAddresses">0</div>
                             <div class="stat-label">Уникальных адресов</div>
                         </div>
                     </div>
                 </div>
-                
                 <div class="col-md-3 mb-3">
                     <div class="stat-card bg-info text-white">
                         <div class="card-body text-center">
-                            <div class="stat-icon mb-2">
-                                <i class="fas fa-star-half-alt"></i>
-                            </div>
+                            <div class="stat-icon mb-2"><i class="fas fa-star-half-alt"></i></div>
                             <div class="stat-number" id="averageRating">0.0</div>
                             <div class="stat-label">Средняя оценка</div>
                         </div>
                     </div>
                 </div>
-                
                 <div class="col-md-3 mb-3">
                     <div class="stat-card bg-warning text-white">
                         <div class="card-body text-center">
-                            <div class="stat-icon mb-2">
-                                <i class="fas fa-calendar-check"></i>
-                            </div>
+                            <div class="stat-icon mb-2"><i class="fas fa-calendar-check"></i></div>
                             <div class="stat-number" id="todayVotes">0</div>
                             <div class="stat-label">Голосов сегодня</div>
                         </div>
@@ -187,35 +125,22 @@
 
             <!-- Распределение оценок -->
             <div class="chart-container fade-in">
-                <h4 class="mb-4">
-                    <i class="fas fa-chart-bar text-primary me-2"></i>Распределение оценок
-                </h4>
-                <div id="ratingsDistribution">
-                    <!-- Динамически заполнится -->
-                </div>
+                <h4 class="mb-4"><i class="fas fa-chart-bar text-primary me-2"></i>Распределение оценок</h4>
+                <div id="ratingsDistribution"></div>
             </div>
 
-            <!-- Самые проблемные вопросы -->
+            <!-- Самые проблемные вопросы / Лучшие показатели -->
             <div class="row fade-in">
                 <div class="col-md-6">
                     <div class="chart-container">
-                        <h4 class="mb-4">
-                            <i class="fas fa-exclamation-triangle text-warning me-2"></i>Самые проблемные вопросы
-                        </h4>
-                        <div id="problemQuestions">
-                            <!-- Динамически заполнится -->
-                        </div>
+                        <h4 class="mb-4"><i class="fas fa-exclamation-triangle text-warning me-2"></i>Самые проблемные вопросы</h4>
+                        <div id="problemQuestions"></div>
                     </div>
                 </div>
-                
                 <div class="col-md-6">
                     <div class="chart-container">
-                        <h4 class="mb-4">
-                            <i class="fas fa-thumbs-up text-success me-2"></i>Лучшие показатели
-                        </h4>
-                        <div id="bestQuestions">
-                            <!-- Динамически заполнится -->
-                        </div>
+                        <h4 class="mb-4"><i class="fas fa-thumbs-up text-success me-2"></i>Лучшие показатели</h4>
+                        <div id="bestQuestions"></div>
                     </div>
                 </div>
             </div>
@@ -223,34 +148,22 @@
             <!-- Последние голоса -->
             <div class="chart-container fade-in">
                 <div class="d-flex justify-content-between align-items-center mb-4">
-                    <h4 class="mb-0">
-                        <i class="fas fa-history text-info me-2"></i>Последние голоса
-                    </h4>
+                    <h4 class="mb-0"><i class="fas fa-history text-info me-2"></i>Последние голоса</h4>
                     <span class="badge bg-primary" id="recentVotesCount">0</span>
                 </div>
-                <div id="recentVotes">
-                    <!-- Динамически заполнится -->
-                </div>
+                <div id="recentVotes"></div>
             </div>
 
             <!-- Топ улиц -->
             <div class="chart-container fade-in">
-                <h4 class="mb-4">
-                    <i class="fas fa-map-marker-alt text-danger me-2"></i>Активность по улицам
-                </h4>
-                <div id="topStreets">
-                    <!-- Динамически заполнится -->
-                </div>
+                <h4 class="mb-4"><i class="fas fa-map-marker-alt text-danger me-2"></i>Активность по улицам</h4>
+                <div id="topStreets"></div>
             </div>
 
-            <!-- Временная активность -->
+            <!-- Активность за неделю -->
             <div class="chart-container fade-in">
-                <h4 class="mb-4">
-                    <i class="fas fa-clock text-secondary me-2"></i>Активность за неделю
-                </h4>
-                <div id="weeklyActivity">
-                    <p class="text-muted">Данные за последние 7 дней</p>
-                </div>
+                <h4 class="mb-4"><i class="fas fa-clock text-secondary me-2"></i>Активность за неделю</h4>
+                <div id="weeklyActivity"></div>
             </div>
         </div>
 
@@ -265,23 +178,109 @@
         </div>
     </div>
 
-    <!-- Скрипты -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // === КОНФИГУРАЦИЯ FIREBASE ===
-        const FIREBASE_CONFIG = {
-            apiKey: "AIzaSyA9x1ZcFgHjklmnoiT2XqPq3RzABCDEFGH",
-            authDomain: "poll-hope-11.firebaseapp.com",
-            databaseURL: "https://poll-hope-11-default-rtdb.europe-west1.firebasedatabase.app",
-            projectId: "poll-hope-11",
-            storageBucket: "poll-hope-11.appspot.com",
-            messagingSenderId: "123456789012",
-            appId: "1:123456789012:web:abcdef1234567890"
-        };
+        // ==================== КОНФИГУРАЦИЯ ====================
+        const FIREBASE_URL = "https://poll-hope-11-default-rtdb.europe-west1.firebasedatabase.app";
+        const DATABASE_URL = FIREBASE_URL; // алиас
         
-        let allVotes = [];
+        let allVotes = [];          // все голоса, загруженные из Firebase
 
-        // === ОСНОВНАЯ ФУНКЦИЯ ЗАГРУЗКИ ===
+        // ==================== МИГРАЦИЯ СТАРЫХ ГОЛОСОВ (однократная) ====================
+        async function migrateOldVotesOnce() {
+            // Флаг, что миграция уже выполнена
+            if (localStorage.getItem('jkh_migrated_from_zhkh') === 'true') {
+                console.log("Миграция старых голосов уже выполнялась ранее, пропускаем");
+                return;
+            }
+
+            const oldData = localStorage.getItem('zhkhVotes');
+            if (!oldData) {
+                console.log("Нет старых голосов для миграции");
+                localStorage.setItem('jkh_migrated_from_zhkh', 'true');
+                return;
+            }
+
+            let oldVotes;
+            try {
+                oldVotes = JSON.parse(oldData);
+            } catch (e) {
+                console.error("Ошибка парсинга старых голосов:", e);
+                return;
+            }
+
+            if (!Array.isArray(oldVotes) || oldVotes.length === 0) {
+                console.log("Массив старых голосов пуст");
+                localStorage.setItem('jkh_migrated_from_zhkh', 'true');
+                return;
+            }
+
+            console.log(`🔄 Начинаем однократную миграцию ${oldVotes.length} старых голосов...`);
+
+            // Получаем текущие ID голосов из Firebase, чтобы избежать дубликатов
+            let existingIds = new Set();
+            try {
+                const resp = await fetch(`${FIREBASE_URL}/votes.json?shallow=true`);
+                if (resp.ok) {
+                    const ids = await resp.json();
+                    if (ids) existingIds = new Set(Object.keys(ids));
+                }
+            } catch (e) {
+                console.warn("Не удалось получить список существующих ID, миграция может создать дубликаты", e);
+            }
+
+            let migrated = 0;
+            for (let i = 0; i < oldVotes.length; i++) {
+                const old = oldVotes[i];
+                
+                // Создаём новый голос
+                const newVote = {
+                    id: Date.now() + i + '_' + Math.random().toString(36).substring(2, 7),
+                    street: old.address?.split(', ')[1] || '',
+                    house: old.address?.split(', ')[2] || '',
+                    entrance: old.entrance || '',
+                    answers: Object.keys(old.ratings || {}).map(q => ({
+                        questionId: parseInt(q),
+                        value: old.ratings[q]
+                    })),
+                    timestamp: old.timestamp || new Date().toISOString(),
+                    district: "Заднепровский район"
+                };
+
+                // Проверяем, нет ли уже такого ID в Firebase (чтобы не дублировать)
+                if (existingIds.has(newVote.id)) continue;
+
+                // Отправляем в Firebase
+                try {
+                    const response = await fetch(`${FIREBASE_URL}/votes/${newVote.id}.json`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(newVote)
+                    });
+                    if (response.ok) {
+                        migrated++;
+                        existingIds.add(newVote.id); // добавляем в Set, чтобы избежать повторной отправки в той же миграции
+                    } else {
+                        console.warn(`Не удалось отправить голос ${i}: ${response.status}`);
+                    }
+                } catch (e) {
+                    console.error(`Ошибка отправки голоса ${i}:`, e);
+                }
+            }
+
+            console.log(`✅ Миграция завершена: отправлено ${migrated} новых голосов`);
+            localStorage.setItem('jkh_migrated_from_zhkh', 'true');
+        }
+
+        // ==================== ЗАГРУЗКА ДАННЫХ ИЗ FIREBASE ====================
+        async function fetchData() {
+            const response = await fetch(`${DATABASE_URL}/votes.json`);
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            const data = await response.json();
+            return data ? Object.values(data) : [];
+        }
+
+        // ==================== ОСНОВНАЯ ФУНКЦИЯ ЗАГРУЗКИ ====================
         async function loadData() {
             try {
                 document.getElementById('results').innerHTML = `
@@ -299,89 +298,41 @@
                 } else {
                     analyzeAndDisplayData(votes);
                 }
-                
             } catch (error) {
                 console.error("Ошибка загрузки:", error);
                 showError(error);
             }
-            // ⚠️ Блок отправки старых голосов УДАЛЁН — он вызывал дублирование записей в Firebase.
         }
 
-        async function fetchData() {
-            try {
-                const databaseURL = "https://poll-hope-11-default-rtdb.europe-west1.firebasedatabase.app";
-                const response = await fetch(`${databaseURL}/votes.json`);
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP error: ${response.status}`);
-                }
-                
-                const data = await response.json();
-                return data ? Object.values(data) : [];
-                
-            } catch (error) {
-                console.error("Ошибка REST API:", error);
-                throw error;
-            }
-        }
-
-        // === АНАЛИЗ ДАННЫХ ===
+        // ==================== АНАЛИЗ ДАННЫХ ====================
         function analyzeAndDisplayData(votes) {
-            // 1. Основная статистика
             const stats = calculateBasicStats(votes);
-            
-            // 2. Распределение оценок
             const ratingDistribution = calculateRatingDistribution(votes);
-            
-            // 3. Анализ по вопросам
             const questionStats = analyzeQuestions(votes);
-            
-            // 4. Последние голоса
             const recentVotes = getRecentVotes(votes, 10);
-            
-            // 5. Топ улиц
             const topStreets = getTopStreets(votes, 8);
-            
-            // 6. Временная активность
             const weeklyActivity = getWeeklyActivity(votes);
             
-            // Отображаем все данные
             displayAllStats(stats, ratingDistribution, questionStats, recentVotes, topStreets, weeklyActivity);
         }
 
         function calculateBasicStats(votes) {
             const totalVotes = votes.length;
-            
-            // Уникальные адреса
             const addresses = new Set();
-            votes.forEach(v => {
-                if (v.street && v.house) {
-                    addresses.add(`${v.street}, ${v.house}`);
-                }
-            });
+            votes.forEach(v => { if (v.street && v.house) addresses.add(`${v.street}, ${v.house}`); });
             
-            // Средняя оценка
-            let totalRating = 0;
-            let ratingCount = 0;
-            
+            let totalRating = 0, ratingCount = 0;
             votes.forEach(vote => {
                 if (vote.answers && Array.isArray(vote.answers)) {
                     vote.answers.forEach(answer => {
                         const value = parseInt(answer.value);
-                        if (!isNaN(value)) {
-                            totalRating += value;
-                            ratingCount++;
-                        }
+                        if (!isNaN(value)) { totalRating += value; ratingCount++; }
                     });
                 }
             });
             
-            // Голоса сегодня
             const today = new Date().toDateString();
-            const todayVotes = votes.filter(v => {
-                const voteDate = new Date(v.timestamp).toDateString();
-                return voteDate === today;
-            }).length;
+            const todayVotes = votes.filter(v => new Date(v.timestamp).toDateString() === today).length;
             
             return {
                 totalVotes,
@@ -393,392 +344,219 @@
         }
 
         function calculateRatingDistribution(votes) {
-            const distribution = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0};
+            const distribution = {1:0,2:0,3:0,4:0,5:0};
             let totalRatings = 0;
-            
             votes.forEach(vote => {
                 if (vote.answers && Array.isArray(vote.answers)) {
                     vote.answers.forEach(answer => {
                         const value = parseInt(answer.value);
-                        if (!isNaN(value) && value >= 1 && value <= 5) {
-                            distribution[value]++;
-                            totalRatings++;
-                        }
+                        if (value >=1 && value <=5) { distribution[value]++; totalRatings++; }
                     });
                 }
             });
-            
-            // Преобразуем в проценты
-            const distributionPercent = {};
-            for (let i = 1; i <= 5; i++) {
-                distributionPercent[i] = totalRatings > 0 ? 
-                    ((distribution[i] / totalRatings) * 100).toFixed(1) : 0;
-            }
-            
-            return {
-                counts: distribution,
-                percentages: distributionPercent,
-                totalRatings
-            };
+            const percentages = {};
+            for (let i=1;i<=5;i++) percentages[i] = totalRatings ? ((distribution[i]/totalRatings)*100).toFixed(1) : 0;
+            return { counts: distribution, percentages, totalRatings };
         }
 
         function analyzeQuestions(votes) {
             const questions = {};
-            
-            // Инициализируем структуру для вопросов
-            for (let i = 1; i <= 5; i++) {
-                questions[i] = {
-                    total: 0,
-                    sum: 0,
-                    average: 0,
-                    distribution: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0}
-                };
-            }
-            
-            // Собираем статистику
+            for (let i=1;i<=5;i++) questions[i] = { total:0, sum:0, average:0, distribution:{1:0,2:0,3:0,4:0,5:0} };
             votes.forEach(vote => {
                 if (vote.answers && Array.isArray(vote.answers)) {
                     vote.answers.forEach(answer => {
-                        const questionId = answer.questionId;
-                        const value = parseInt(answer.value);
-                        
-                        if (questions[questionId] && !isNaN(value)) {
-                            questions[questionId].total++;
-                            questions[questionId].sum += value;
-                            questions[questionId].distribution[value]++;
+                        const qid = answer.questionId;
+                        const val = parseInt(answer.value);
+                        if (questions[qid] && !isNaN(val)) {
+                            questions[qid].total++;
+                            questions[qid].sum += val;
+                            questions[qid].distribution[val]++;
                         }
                     });
                 }
             });
-            
-            // Рассчитываем средние
             Object.keys(questions).forEach(id => {
                 const q = questions[id];
                 q.average = q.total > 0 ? (q.sum / q.total).toFixed(1) : 0;
             });
-            
-            // Сортируем по средней оценке (от низкой к высокой)
-            const sortedQuestions = Object.entries(questions)
-                .sort((a, b) => parseFloat(a[1].average) - parseFloat(b[1].average));
-            
-            return {
-                worst: sortedQuestions.slice(0, 3), // 3 самых проблемных
-                best: sortedQuestions.slice(-3).reverse(), // 3 лучших
-                all: questions
-            };
+            const sorted = Object.entries(questions).sort((a,b) => parseFloat(a[1].average) - parseFloat(b[1].average));
+            return { worst: sorted.slice(0,3), best: sorted.slice(-3).reverse(), all: questions };
         }
 
-        function getRecentVotes(votes, limit = 10) {
-            return votes
-                .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
-                .slice(0, limit);
+        function getRecentVotes(votes, limit=10) {
+            return [...votes].sort((a,b)=>new Date(b.timestamp)-new Date(a.timestamp)).slice(0,limit);
         }
 
-        function getTopStreets(votes, limit = 8) {
+        function getTopStreets(votes, limit=8) {
             const streetStats = {};
-            
-            votes.forEach(v => {
-                if (v.street) {
-                    streetStats[v.street] = (streetStats[v.street] || 0) + 1;
-                }
-            });
-            
-            return Object.entries(streetStats)
-                .sort((a, b) => b[1] - a[1])
-                .slice(0, limit);
+            votes.forEach(v => { if (v.street) streetStats[v.street] = (streetStats[v.street]||0)+1; });
+            return Object.entries(streetStats).sort((a,b)=>b[1]-a[1]).slice(0,limit);
         }
 
         function getWeeklyActivity(votes) {
-            const last7Days = [];
-            const activity = {};
-            
-            // Создаем массив последних 7 дней
-            for (let i = 6; i >= 0; i--) {
-                const date = new Date();
-                date.setDate(date.getDate() - i);
-                const dateStr = date.toLocaleDateString('ru-RU', { 
-                    weekday: 'short', 
-                    month: 'short', 
-                    day: 'numeric' 
-                });
-                last7Days.push(dateStr);
-                activity[dateStr] = 0;
+            const last7Days = [], activity = {};
+            for (let i=6;i>=0;i--) {
+                const d = new Date(); d.setDate(d.getDate()-i);
+                const s = d.toLocaleDateString('ru-RU', { weekday:'short', month:'short', day:'numeric' });
+                last7Days.push(s); activity[s]=0;
             }
-            
-            // Считаем голоса за каждый день
-            votes.forEach(vote => {
-                const voteDate = new Date(vote.timestamp);
-                const dateStr = voteDate.toLocaleDateString('ru-RU', { 
-                    weekday: 'short', 
-                    month: 'short', 
-                    day: 'numeric' 
-                });
-                
-                if (activity[dateStr] !== undefined) {
-                    activity[dateStr]++;
-                }
+            votes.forEach(v => {
+                const d = new Date(v.timestamp);
+                const s = d.toLocaleDateString('ru-RU', { weekday:'short', month:'short', day:'numeric' });
+                if (activity[s]!==undefined) activity[s]++;
             });
-            
-            return {
-                labels: last7Days,
-                values: last7Days.map(date => activity[date] || 0)
-            };
+            return { labels: last7Days, values: last7Days.map(d=>activity[d]||0) };
         }
 
-        // === ОТОБРАЖЕНИЕ ДАННЫХ ===
-        function displayAllStats(stats, ratingDistribution, questionStats, recentVotes, topStreets, weeklyActivity) {
+        // ==================== ОТОБРАЖЕНИЕ ====================
+        function displayAllStats(stats, dist, qStats, recent, streets, weekly) {
             const template = document.getElementById('resultsTemplate').innerHTML;
             document.getElementById('results').innerHTML = template;
             
-            // 1. Основные показатели
             document.getElementById('totalVotesStat').textContent = stats.totalVotes;
             document.getElementById('uniqueAddresses').textContent = stats.uniqueAddresses;
             document.getElementById('averageRating').textContent = stats.averageRating;
             document.getElementById('todayVotes').textContent = stats.todayVotes;
             
-            // 2. Распределение оценок
-            displayRatingDistribution(ratingDistribution);
-            
-            // 3. Вопросы
-            displayQuestionStats(questionStats);
-            
-            // 4. Последние голоса
-            displayRecentVotes(recentVotes);
-            
-            // 5. Топ улиц
-            displayTopStreets(topStreets);
-            
-            // 6. Активность
-            displayWeeklyActivity(weeklyActivity);
-            
-            // Добавляем анимацию
+            displayRatingDistribution(dist);
+            displayQuestionStats(qStats);
+            displayRecentVotes(recent);
+            displayTopStreets(streets);
+            displayWeeklyActivity(weekly);
             animateStats();
         }
 
-        function displayRatingDistribution(distribution) {
-            const container = document.getElementById('ratingsDistribution');
+        function displayRatingDistribution(dist) {
+            const c = document.getElementById('ratingsDistribution');
             let html = '<div class="row">';
-            
-            for (let rating = 5; rating >= 1; rating--) {
-                const percentage = distribution.percentages[rating];
-                const count = distribution.counts[rating];
-                
-                html += `
-                    <div class="col-md-12 mb-3">
-                        <div class="progress-label">
-                            <span>
-                                <strong>${rating} ⭐</strong>
-                                <span class="rating-count ms-2">${count} оценок</span>
-                            </span>
-                            <span><strong>${percentage}%</strong></span>
-                        </div>
-                        <div class="progress" style="height: 20px;">
-                            <div class="progress-bar rating-${rating}" 
-                                 role="progressbar" 
-                                 style="width: ${percentage}%"
-                                 aria-valuenow="${percentage}" 
-                                 aria-valuemin="0" 
-                                 aria-valuemax="100">
-                            </div>
-                        </div>
+            for (let r=5; r>=1; r--) {
+                html += `<div class="col-md-12 mb-3">
+                    <div class="progress-label">
+                        <span><strong>${r} ⭐</strong><span class="rating-count ms-2">${dist.counts[r]} оценок</span></span>
+                        <span><strong>${dist.percentages[r]}%</strong></span>
                     </div>
-                `;
+                    <div class="progress" style="height:20px;">
+                        <div class="progress-bar rating-${r}" style="width:${dist.percentages[r]}%"></div>
+                    </div>
+                </div>`;
             }
-            
             html += '</div>';
-            container.innerHTML = html;
+            c.innerHTML = html;
         }
 
-        function displayQuestionStats(questionStats) {
-            // Самые проблемные вопросы
-            const problemsContainer = document.getElementById('problemQuestions');
-            let problemsHtml = '';
-            
-            questionStats.worst.forEach(([id, data]) => {
-                const questionText = getQuestionText(id);
-                problemsHtml += `
-                    <div class="mb-3">
-                        <div class="d-flex justify-content-between mb-1">
-                            <span class="small">${questionText}</span>
-                            <span class="badge bg-warning">${data.average}/5</span>
-                        </div>
-                        <div class="progress" style="height: 10px;">
-                            <div class="progress-bar bg-warning" style="width: ${data.average * 20}%"></div>
-                        </div>
-                    </div>
-                `;
+        function displayQuestionStats(qStats) {
+            const problems = document.getElementById('problemQuestions');
+            let pHtml = '';
+            qStats.worst.forEach(([id,data]) => {
+                pHtml += `<div class="mb-3"><div class="d-flex justify-content-between mb-1">
+                    <span class="small">${getQuestionText(id)}</span>
+                    <span class="badge bg-warning">${data.average}/5</span>
+                </div><div class="progress" style="height:10px;">
+                    <div class="progress-bar bg-warning" style="width:${data.average*20}%"></div>
+                </div></div>`;
             });
-            problemsContainer.innerHTML = problemsHtml;
+            problems.innerHTML = pHtml;
             
-            // Лучшие вопросы
-            const bestContainer = document.getElementById('bestQuestions');
-            let bestHtml = '';
-            
-            questionStats.best.forEach(([id, data]) => {
-                const questionText = getQuestionText(id);
-                bestHtml += `
-                    <div class="mb-3">
-                        <div class="d-flex justify-content-between mb-1">
-                            <span class="small">${questionText}</span>
-                            <span class="badge bg-success">${data.average}/5</span>
-                        </div>
-                        <div class="progress" style="height: 10px;">
-                            <div class="progress-bar bg-success" style="width: ${data.average * 20}%"></div>
-                        </div>
-                    </div>
-                `;
+            const best = document.getElementById('bestQuestions');
+            let bHtml = '';
+            qStats.best.forEach(([id,data]) => {
+                bHtml += `<div class="mb-3"><div class="d-flex justify-content-between mb-1">
+                    <span class="small">${getQuestionText(id)}</span>
+                    <span class="badge bg-success">${data.average}/5</span>
+                </div><div class="progress" style="height:10px;">
+                    <div class="progress-bar bg-success" style="width:${data.average*20}%"></div>
+                </div></div>`;
             });
-            bestContainer.innerHTML = bestHtml;
+            best.innerHTML = bHtml;
         }
 
         function getQuestionText(id) {
-            const questions = {
-                1: "Уборка подъездов",
-                2: "Вывоз мусора",
-                3: "Состояние лифтов",
-                4: "Уборка двора",
-                5: "Освещение"
-            };
-            return questions[id] || `Вопрос ${id}`;
+            const q = {1:"Уборка подъездов",2:"Вывоз мусора",3:"Состояние лифтов",4:"Уборка двора",5:"Освещение"};
+            return q[id] || `Вопрос ${id}`;
         }
 
         function displayRecentVotes(votes) {
-            const container = document.getElementById('recentVotes');
+            const c = document.getElementById('recentVotes');
             document.getElementById('recentVotesCount').textContent = votes.length;
-            
-            if (votes.length === 0) {
-                container.innerHTML = '<p class="text-muted">Нет данных о голосах</p>';
-                return;
-            }
-            
+            if (!votes.length) { c.innerHTML = '<p class="text-muted">Нет данных о голосах</p>'; return; }
             let html = '';
-            votes.forEach(vote => {
-                const time = new Date(vote.timestamp).toLocaleTimeString('ru-RU', { 
-                    hour: '2-digit', 
-                    minute: '2-digit' 
-                });
-                const date = new Date(vote.timestamp).toLocaleDateString('ru-RU');
-                
-                // Считаем среднюю оценку для этого голоса
-                let avgRating = 0;
-                if (vote.answers && vote.answers.length > 0) {
-                    const sum = vote.answers.reduce((acc, ans) => acc + parseInt(ans.value), 0);
-                    avgRating = (sum / vote.answers.length).toFixed(1);
+            votes.forEach(v => {
+                const time = new Date(v.timestamp).toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'});
+                const date = new Date(v.timestamp).toLocaleDateString('ru-RU');
+                let avg = 0;
+                if (v.answers?.length) {
+                    const sum = v.answers.reduce((a,b)=>a+parseInt(b.value),0);
+                    avg = (sum/v.answers.length).toFixed(1);
                 }
-                
-                html += `
-                    <div class="vote-card p-3">
-                        <div class="d-flex justify-content-between align-items-start mb-2">
-                            <div>
-                                <span class="vote-street">
-                                    <i class="fas fa-home text-primary me-2"></i>
-                                    ${vote.street}, ${vote.house}
-                                    ${vote.entrance ? `, подъезд ${vote.entrance}` : ''}
-                                </span>
-                                <div class="vote-time">
-                                    <i class="far fa-clock me-1"></i>
-                                    ${date} в ${time}
-                                </div>
-                            </div>
-                            <span class="badge bg-info">${avgRating}/5</span>
+                html += `<div class="vote-card p-3">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div>
+                            <span class="vote-street"><i class="fas fa-home text-primary me-2"></i>${v.street}, ${v.house}${v.entrance?`, подъезд ${v.entrance}`:''}</span>
+                            <div class="vote-time"><i class="far fa-clock me-1"></i>${date} в ${time}</div>
                         </div>
-                        <div class="d-flex gap-2 flex-wrap">
-                `;
-                
-                if (vote.answers && Array.isArray(vote.answers)) {
-                    vote.answers.forEach(answer => {
-                        const value = parseInt(answer.value);
-                        let color = "secondary";
-                        if (value >= 4) color = "success";
-                        else if (value >= 3) color = "warning";
-                        else if (value <= 2) color = "danger";
-                        
-                        html += `<span class="badge bg-${color}">${value}</span>`;
-                    });
-                }
-                
+                        <span class="badge bg-info">${avg}/5</span>
+                    </div>
+                    <div class="d-flex gap-2 flex-wrap">`;
+                v.answers?.forEach(a => {
+                    let color = "secondary";
+                    if (a.value>=4) color="success"; else if (a.value>=3) color="warning"; else if (a.value<=2) color="danger";
+                    html += `<span class="badge bg-${color}">${a.value}</span>`;
+                });
                 html += `</div></div>`;
             });
-            
-            container.innerHTML = html;
+            c.innerHTML = html;
         }
 
         function displayTopStreets(streets) {
-            const container = document.getElementById('topStreets');
-            
-            if (streets.length === 0) {
-                container.innerHTML = '<p class="text-muted">Нет данных по улицам</p>';
-                return;
-            }
-            
-            const maxVotes = Math.max(...streets.map(s => s[1]));
+            const c = document.getElementById('topStreets');
+            if (!streets.length) { c.innerHTML = '<p class="text-muted">Нет данных по улицам</p>'; return; }
+            const max = Math.max(...streets.map(s=>s[1]));
             let html = '';
-            
-            streets.forEach(([street, count]) => {
-                const percentage = (count / maxVotes) * 100;
-                html += `
-                    <div class="mb-3">
-                        <div class="d-flex justify-content-between mb-1">
-                            <span>${street}</span>
-                            <span class="badge bg-primary">${count} голосов</span>
-                        </div>
-                        <div class="progress" style="height: 10px;">
-                            <div class="progress-bar bg-primary" style="width: ${percentage}%"></div>
-                        </div>
+            streets.forEach(([street,count]) => {
+                html += `<div class="mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span>${street}</span>
+                        <span class="badge bg-primary">${count} голосов</span>
                     </div>
-                `;
+                    <div class="progress" style="height:10px;">
+                        <div class="progress-bar bg-primary" style="width:${(count/max)*100}%"></div>
+                    </div>
+                </div>`;
             });
-            
-            container.innerHTML = html;
+            c.innerHTML = html;
         }
 
         function displayWeeklyActivity(activity) {
-            const container = document.getElementById('weeklyActivity');
-            const maxActivity = Math.max(...activity.values);
-            
+            const c = document.getElementById('weeklyActivity');
+            const max = Math.max(...activity.values);
             let html = '<div class="row text-center">';
-            
-            activity.labels.forEach((label, index) => {
-                const count = activity.values[index];
-                const height = maxActivity > 0 ? (count / maxActivity) * 100 : 0;
-                
-                html += `
-                    <div class="col">
-                        <div class="d-flex flex-column align-items-center">
-                            <div class="mb-2" style="height: 120px; width: 100%; display: flex; align-items: flex-end;">
-                                <div class="w-100 bg-primary" style="height: ${height}%; border-radius: 5px 5px 0 0;"></div>
-                            </div>
-                            <div class="small text-muted">${label.split(' ')[0]}</div>
-                            <div class="fw-bold">${count}</div>
+            activity.labels.forEach((l,i) => {
+                const h = max>0 ? (activity.values[i]/max)*100 : 0;
+                html += `<div class="col">
+                    <div class="d-flex flex-column align-items-center">
+                        <div class="mb-2" style="height:120px; width:100%; display:flex; align-items:flex-end;">
+                            <div class="w-100 bg-primary" style="height:${h}%; border-radius:5px 5px 0 0;"></div>
                         </div>
+                        <div class="small text-muted">${l.split(' ')[0]}</div>
+                        <div class="fw-bold">${activity.values[i]}</div>
                     </div>
-                `;
+                </div>`;
             });
-            
             html += '</div>';
-            container.innerHTML = html;
+            c.innerHTML = html;
         }
 
         function animateStats() {
-            const elements = document.querySelectorAll('.fade-in');
-            elements.forEach((el, index) => {
-                setTimeout(() => {
-                    el.style.opacity = '1';
-                }, index * 100);
-            });
+            document.querySelectorAll('.fade-in').forEach((el,i)=>setTimeout(()=>el.style.opacity='1', i*100));
         }
 
         function showNoData() {
             document.getElementById('results').innerHTML = `
                 <div class="alert alert-info text-center py-5">
-                    <div class="display-1 text-muted mb-4">
-                        <i class="fas fa-database"></i>
-                    </div>
+                    <div class="display-1 text-muted mb-4"><i class="fas fa-database"></i></div>
                     <h4 class="mb-3">База данных пуста</h4>
                     <p class="mb-4">В облачной базе пока нет голосов. Будьте первым, кто проголосует!</p>
-                    <a href="index.html" class="btn btn-primary btn-lg">
-                        <i class="fas fa-vote-yea me-2"></i>Проголосовать первым
-                    </a>
+                    <a href="index.html" class="btn btn-primary btn-lg"><i class="fas fa-vote-yea me-2"></i>Проголосовать первым</a>
                 </div>
             `;
         }
@@ -788,36 +566,19 @@
                 <div class="alert alert-danger">
                     <h4><i class="fas fa-exclamation-triangle"></i> Ошибка загрузки данных</h4>
                     <p>${error.message || "Неизвестная ошибка подключения"}</p>
-                    
                     <div class="mt-3">
-                        <button class="btn btn-warning" onclick="loadData()">
-                            <i class="fas fa-redo me-2"></i>Попробовать снова
-                        </button>
-                        <button class="btn btn-secondary" onclick="location.reload()">
-                            <i class="fas fa-sync-alt me-2"></i>Перезагрузить страницу
-                        </button>
+                        <button class="btn btn-warning" onclick="loadData()"><i class="fas fa-redo me-2"></i>Попробовать снова</button>
+                        <button class="btn btn-secondary" onclick="location.reload()"><i class="fas fa-sync-alt me-2"></i>Перезагрузить страницу</button>
                     </div>
                 </div>
             `;
         }
 
         function exportAllData() {
-            if (allVotes.length === 0) {
-                alert('Нет данных для экспорта');
-                return;
-            }
-            
-            const exportData = {
-                timestamp: new Date().toISOString(),
-                totalVotes: allVotes.length,
-                votes: allVotes,
-                note: 'Экспорт данных из опроса ЖКХ'
-            };
-            
-            const jsonString = JSON.stringify(exportData, null, 2);
-            const blob = new Blob([jsonString], { type: 'application/json' });
+            if (!allVotes.length) { alert('Нет данных для экспорта'); return; }
+            const exp = { timestamp: new Date().toISOString(), totalVotes: allVotes.length, votes: allVotes, note: 'Экспорт данных из опроса ЖКХ' };
+            const blob = new Blob([JSON.stringify(exp,null,2)], {type:'application/json'});
             const url = URL.createObjectURL(blob);
-            
             const a = document.createElement('a');
             a.href = url;
             a.download = `jkh-poll-export-${new Date().toISOString().slice(0,10)}.json`;
@@ -827,13 +588,17 @@
             URL.revokeObjectURL(url);
         }
 
-        // Автозагрузка при открытии
-        document.addEventListener('DOMContentLoaded', loadData);
-        
-        // Автообновление каждые 60 секунд
+        // ==================== СТАРТ ====================
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Однократная миграция старых голосов
+            await migrateOldVotesOnce();
+            // Загрузка данных из Firebase
+            await loadData();
+        });
+
+        // Автообновление каждые 60 секунд (только загрузка, без миграции)
         setInterval(() => {
-            const isVisible = document.visibilityState === 'visible';
-            if (isVisible) {
+            if (document.visibilityState === 'visible') {
                 loadData();
             }
         }, 60000);
