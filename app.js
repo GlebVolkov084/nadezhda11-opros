@@ -1,10 +1,10 @@
+<script>
 // ==================== КОНФИГУРАЦИЯ FIREBASE ====================
 // ⚠️ ВАЖНО: ЗАМЕНИТЕ ЭТИ ЗНАЧЕНИЯ НА СВОИ ИЗ FIREBASE CONSOLE!
-
 const FIREBASE_CONFIG = {
     apiKey: "AIzaSyA9x1ZcFgHjklmnoiT2XqPq3RzABCDEFGH",
     authDomain: "poll-hope-11.firebaseapp.com",
-   databaseURL: "https://poll-hope-11-default-rtdb.europe-west1.firebasedatabase.app",
+    databaseURL: "https://poll-hope-11-default-rtdb.europe-west1.firebasedatabase.app",
     projectId: "poll-hope-11",
     storageBucket: "poll-hope-11.appspot.com",
     messagingSenderId: "123456789012",
@@ -63,18 +63,15 @@ let votes = [];
 function initializeFirebase() {
     console.log("Инициализация Firebase...");
     
-    // Проверяем, загружен ли Firebase
     if (typeof firebase === 'undefined') {
         console.log("Загружаем Firebase SDK...");
         
-        // Загружаем Firebase App
         const firebaseAppScript = document.createElement('script');
         firebaseAppScript.src = "https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js";
         
         firebaseAppScript.onload = () => {
             console.log("Firebase App загружен");
             
-            // Загружаем Firebase Database
             const firebaseDBScript = document.createElement('script');
             firebaseDBScript.src = "https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js";
             
@@ -105,57 +102,69 @@ function initializeFirebase() {
 
 function initFirebaseApp() {
     try {
-        // Инициализируем Firebase
         if (!firebase.apps.length) {
             firebase.initializeApp(FIREBASE_CONFIG);
-            console.log("Firebase инициализирован с конфигом:", FIREBASE_CONFIG);
+            console.log("✅ Firebase инициализирован");
+        } else {
+            console.log("✅ Firebase уже был инициализирован");
         }
         
         db = firebase.database();
         firebaseInitialized = true;
-        console.log("Firebase Database готов к работе");
+        console.log("✅ Firebase Database готов к работе");
         
-        // Загружаем данные
-        loadDataFromFirebase();
+        // 1. Объединяем локальные и серверные данные
+        loadAndMergeData();
         
-        // Слушаем новые голоса
+        // 2. Слушаем новые голоса в реальном времени
         setupRealtimeListener();
         
+        // 3. Отправляем в Firebase локальные голоса, которых там ещё нет
+        syncLocalVotesToFirebase();
+        
     } catch (error) {
-        console.error("Ошибка инициализации Firebase:", error);
-        showError("Ошибка подключения к базе данных. Проверьте конфигурацию Firebase.");
+        console.error("❌ Ошибка инициализации Firebase:", error);
+        firebaseInitialized = false;
+        showError("Ошибка подключения к базе данных. Голоса сохраняются локально.");
     }
 }
 
-// ==================== РАБОТА С ДАННЫМИ ====================
-async function loadDataFromFirebase() {
+// ==================== РАБОТА С ДАННЫМИ (ОБЪЕДИНЕНИЕ) ====================
+async function loadAndMergeData() {
     if (!firebaseInitialized || !db) {
-        console.log("Firebase не инициализирован, ждем...");
-        setTimeout(loadDataFromFirebase, 1000);
+        console.log("Firebase не инициализирован, пропускаем объединение");
         return;
     }
     
     try {
-        console.log("Загрузка данных из Firebase...");
+        console.log("📥 Загрузка данных из Firebase...");
         const snapshot = await db.ref('votes').once('value');
-        const data = snapshot.val();
+        const firebaseData = snapshot.val();
+        const firebaseVotes = firebaseData ? Object.values(firebaseData) : [];
+        console.log(`   Из Firebase: ${firebaseVotes.length} голосов`);
         
-        if (data) {
-            votes = Object.values(data);
-            console.log(`Загружено ${votes.length} голосов из Firebase`);
-        } else {
-            votes = [];
-            console.log("В Firebase пока нет голосов");
-        }
+        // Локальные голоса уже должны быть в votes (загружены из localStorage)
+        const localVotes = votes;
         
+        // Слияние без дубликатов (приоритет — серверные данные)
+        const mergedMap = new Map();
+        firebaseVotes.forEach(v => mergedMap.set(v.id, v));
+        localVotes.forEach(v => {
+            if (!mergedMap.has(v.id)) {
+                mergedMap.set(v.id, v);
+            }
+        });
+        
+        votes = Array.from(mergedMap.values());
+        console.log(`🔄 После объединения: ${votes.length} голосов`);
+        
+        // Сохраняем полный набор обратно в localStorage
+        saveToLocalStorage();
         updateVotesCounter();
         
     } catch (error) {
         console.error("Ошибка загрузки из Firebase:", error);
-        showError("Не удалось загрузить данные. Проверьте подключение к интернету.");
-        
-        // Загружаем из localStorage как fallback
-        loadFromLocalStorage();
+        // Оставляем votes как есть (локальные данные)
     }
 }
 
@@ -164,15 +173,48 @@ function setupRealtimeListener() {
     
     db.ref('votes').on('child_added', (snapshot) => {
         const newVote = snapshot.val();
-        console.log("Новый голос в реальном времени:", newVote);
+        console.log("🔔 Новый голос в реальном времени:", newVote);
         
-        // Проверяем, нет ли такого голоса
         if (!votes.some(v => v.id === newVote.id)) {
             votes.push(newVote);
-            updateVotesCounter();
             saveToLocalStorage();
+            updateVotesCounter();
         }
     });
+}
+
+// ==================== АВТОСИНХРОНИЗАЦИЯ ЛОКАЛЬНЫХ ГОЛОСОВ ====================
+async function syncLocalVotesToFirebase() {
+    if (!firebaseInitialized || !db) {
+        console.log("Firebase не готов, синхронизация отложена");
+        return;
+    }
+    
+    try {
+        // Получаем все ID голосов, уже существующих в Firebase
+        const snapshot = await db.ref('votes').once('value');
+        const firebaseVotes = snapshot.val() || {};
+        const firebaseIds = new Set(Object.keys(firebaseVotes));
+        
+        let syncedCount = 0;
+        for (const vote of votes) {
+            if (!firebaseIds.has(vote.id)) {
+                try {
+                    await db.ref('votes/' + vote.id).set(vote);
+                    console.log(`✅ Отправлен локальный голос ${vote.id}`);
+                    syncedCount++;
+                } catch (error) {
+                    console.error(`❌ Ошибка отправки голоса ${vote.id}:`, error);
+                }
+            }
+        }
+        
+        if (syncedCount > 0) {
+            console.log(`🔄 Синхронизировано ${syncedCount} локальных голосов с Firebase`);
+        }
+    } catch (error) {
+        console.error("Ошибка при синхронизации с Firebase:", error);
+    }
 }
 
 // ==================== ИНТЕРФЕЙС ====================
@@ -183,7 +225,6 @@ function loadQuestions() {
     container.innerHTML = '';
     
     CONFIG.questions.forEach(question => {
-        // Заголовок категории (если изменилась)
         if (question.category) {
             container.innerHTML += `
                 <div class="category-header mt-4">
@@ -194,7 +235,6 @@ function loadQuestions() {
         }
         
         let inputHtml = '';
-        
         if (question.type === 'rating') {
             inputHtml = `
                 <div class="rating-stars mb-2" id="stars-${question.id}">
@@ -226,7 +266,6 @@ function loadQuestions() {
                 const questionId = this.getAttribute('data-question');
                 const value = this.getAttribute('data-value');
                 
-                // Подсвечиваем звезды
                 document.querySelectorAll(`.star[data-question="${questionId}"]`).forEach((s, index) => {
                     const icon = s.querySelector('i');
                     if (index < value) {
@@ -238,7 +277,6 @@ function loadQuestions() {
                     }
                 });
                 
-                // Сохраняем значение
                 document.getElementById(`answer-${questionId}`).value = value;
             });
         });
@@ -246,7 +284,6 @@ function loadQuestions() {
 }
 
 async function submitVote() {
-    // Проверяем адрес
     const street = document.getElementById('street').value.trim();
     const house = document.getElementById('house').value.trim();
     
@@ -255,7 +292,6 @@ async function submitVote() {
         return;
     }
     
-    // Проверяем ответы
     const answers = [];
     let allAnswered = true;
     
@@ -264,7 +300,6 @@ async function submitVote() {
         
         if (!answerValue) {
             allAnswered = false;
-            // Подсвечиваем неотвеченный вопрос
             const questionElement = document.querySelector(`[data-id="${question.id}"]`);
             if (questionElement) {
                 questionElement.style.border = '2px solid #dc3545';
@@ -287,7 +322,6 @@ async function submitVote() {
         return;
     }
     
-    // Создаем объект голоса
     const voteData = {
         id: Date.now() + '_' + Math.random().toString(36).substr(2, 9),
         street: street,
@@ -298,31 +332,27 @@ async function submitVote() {
         district: CONFIG.district
     };
     
-    console.log("Отправляем голос:", voteData);
+    console.log("📤 Отправляем голос:", voteData);
     
     // Сохраняем локально
     votes.push(voteData);
     saveToLocalStorage();
     updateVotesCounter();
     
-    // Отправляем в Firebase
+    // Отправляем в Firebase, если доступен
     if (firebaseInitialized && db) {
         try {
             await db.ref('votes/' + voteData.id).set(voteData);
-            console.log("Голос отправлен в Firebase");
-            
-            // Показываем уведомление об успехе
+            console.log("✅ Голос отправлен в Firebase");
             showSuccessModal();
-            
         } catch (error) {
-            console.error("Ошибка отправки в Firebase:", error);
-            alert('Голос сохранен локально. При подключении к интернету синхронизируется автоматически.');
+            console.error("❌ Ошибка отправки в Firebase:", error);
+            alert('⚠️ Голос сохранён локально. При следующем подключении к интернету он будет синхронизирован автоматически.');
         }
     } else {
-        alert('Голос сохранен локально. При подключении к интернету синхронизируется с общей базой.');
+        alert('💾 Голос сохранён локально. При подключении к интернету синхронизируется с общей базой.');
     }
     
-    // Очищаем форму
     clearForm();
 }
 
@@ -336,16 +366,13 @@ function clearForm() {
     document.getElementById('house').value = '';
     document.getElementById('entrance').value = '';
     
-    // Сбрасываем звезды
     document.querySelectorAll('.star i').forEach(icon => {
         icon.className = 'far fa-star';
     });
-    
     document.querySelectorAll('.star').forEach(star => {
         star.classList.remove('active');
     });
     
-    // Сбрасываем скрытые поля
     CONFIG.questions.forEach(q => {
         const input = document.getElementById(`answer-${q.id}`);
         if (input) input.value = '';
@@ -363,6 +390,7 @@ function updateVotesCounter() {
 function saveToLocalStorage() {
     try {
         localStorage.setItem(CONFIG.storageKey, JSON.stringify(votes));
+        console.log(`💾 Сохранено ${votes.length} голосов в localStorage`);
     } catch (error) {
         console.error("Ошибка сохранения в localStorage:", error);
     }
@@ -374,21 +402,26 @@ function loadFromLocalStorage() {
         if (saved) {
             votes = JSON.parse(saved);
             updateVotesCounter();
-            console.log(`Загружено ${votes.length} голосов из localStorage`);
+            console.log(`📀 Загружено ${votes.length} голосов из localStorage`);
+        } else {
+            console.log("ℹ️ В localStorage нет сохранённых голосов");
         }
     } catch (error) {
         console.error("Ошибка загрузки из localStorage:", error);
+        votes = [];
     }
-    loadFromGlobStorage();
+    // ❌ УДАЛЕНО: loadFromGlobStorage(); – больше не вызывается автоматически!
 }
-function loadFromGlobStorage() { //fetch напрямую
-const votes = JSON.parse(localStorage.getItem('zhkhVotes')) || [];
-console.log('Голоса:', votes);
-votes.forEach((vote, i) => {
-    const id = Date.now() + i;
-    fetch('https://poll-hope-11-default-rtdb.europe-west1.firebasedatabase.app/votes/' + id + '.json', {
-        method: 'PUT',
-        body: JSON.stringify({
+
+// ==================== ФУНКЦИЯ ДЛЯ РАЗОВОГО ИМПОРТА СТАРЫХ ДАННЫХ ====================
+// (Можно вызвать вручную из консоли, если нужно)
+function loadFromGlobStorage() {
+    const oldVotes = JSON.parse(localStorage.getItem('zhkhVotes')) || [];
+    console.log('📦 Найдено старых голосов для импорта:', oldVotes.length);
+    
+    oldVotes.forEach((vote, i) => {
+        const id = Date.now() + i + '_' + Math.random().toString(36).substr(2, 5);
+        const newVote = {
             id: id,
             street: vote.address?.split(', ')[1] || '',
             house: vote.address?.split(', ')[2] || '',
@@ -398,22 +431,32 @@ votes.forEach((vote, i) => {
                 value: vote.ratings[q]
             })),
             timestamp: vote.timestamp || new Date().toISOString(),
-            district: "Заднепровский район"
-        })
-    })
-    .then(res => res.json())
-    .then(data => console.log(`✅ Импорт ${i+1} завершен`, data))
-    .catch(err => console.error(`❌ Ошибка ${i+1}:`, err));
-});
+            district: CONFIG.district
+        };
+        
+        // Добавляем в локальный массив
+        votes.push(newVote);
+        
+        // Если Firebase доступен – отправляем сразу
+        if (firebaseInitialized && db) {
+            db.ref('votes/' + id).set(newVote)
+                .then(() => console.log(`✅ Импорт ${i+1} завершён`))
+                .catch(err => console.error(`❌ Ошибка импорта ${i+1}:`, err));
+        }
+    });
+    
+    saveToLocalStorage();
+    updateVotesCounter();
+    console.log(`✅ Импорт завершён. Всего голосов: ${votes.length}`);
 }
+
 // ==================== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ====================
 function showError(message) {
     console.error(message);
-    // Можно добавить уведомление на странице
     const errorDiv = document.createElement('div');
     errorDiv.className = 'alert alert-danger mt-3';
     errorDiv.innerHTML = `<i class="fas fa-exclamation-triangle"></i> ${message}`;
-    document.querySelector('.container').appendChild(errorDiv);
+    document.querySelector('.container')?.appendChild(errorDiv);
     
     setTimeout(() => {
         errorDiv.remove();
@@ -422,21 +465,24 @@ function showError(message) {
 
 // ==================== ЗАПУСК ПРИ ЗАГРУЗКЕ ====================
 document.addEventListener('DOMContentLoaded', function() {
-    console.log("Страница загружена");
+    console.log("🚀 Страница загружена, запуск...");
     
-    // Загружаем вопросы
+    // 1. Загружаем вопросы
     loadQuestions();
     
-    // Загружаем данные из localStorage
+    // 2. Загружаем локальные голоса
     loadFromLocalStorage();
     
-    // Инициализируем Firebase
+    // 3. Инициализируем Firebase (он сам догрузит серверные данные и синхронизирует)
     initializeFirebase();
     
-    // Обновляем счетчик
+    // 4. Обновляем счётчик (локальные данные уже есть)
     updateVotesCounter();
 });
 
-// Экспортируем функции для использования в консоли
+// Экспортируем функции в глобальную область для консоли
 window.submitVote = submitVote;
 window.clearForm = clearForm;
+window.loadFromGlobStorage = loadFromGlobStorage; // если нужен ручной импорт
+window.syncLocalVotesToFirebase = syncLocalVotesToFirebase; // для ручной синхронизации
+</script>
