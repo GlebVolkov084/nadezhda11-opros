@@ -4,377 +4,365 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Опрос ЖКХ - Заднепровский район (Королевка)</title>
+    
+    <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
     <style>
-        body { font-family: Arial, sans-serif; background-color: #f8f9fa; }
-        .container { max-width: 800px; }
-        .star { color: #ddd; font-size: 30px; cursor: pointer; margin: 0 5px; }
-        .star.active { color: #ffc107; }
-        .question { background: white; padding: 20px; border-radius: 10px; margin: 15px 0; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        .address-select { background-color: #f0f8ff; }
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #e9ecef 100%);
+            min-height: 100vh;
+            padding: 30px 0;
+        }
+        
+        .container {
+            max-width: 850px;
+        }
+        
+        .main-card {
+            background: white;
+            border-radius: 24px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.05);
+            padding: 35px;
+            transition: all 0.3s;
+        }
+        
+        .header-icon {
+            background: linear-gradient(135deg, #0d6efd, #0b5ed7);
+            width: 80px;
+            height: 80px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+        }
+        
+        .header-icon i {
+            font-size: 40px;
+            color: white;
+        }
+        
+        .welcome-banner {
+            background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(13,110,253,0.2);
+        }
+        
+        .address-card {
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: 20px;
+            padding: 25px;
+            margin-bottom: 30px;
+            transition: all 0.3s;
+        }
+        
+        .address-card:hover {
+            border-color: #0d6efd;
+            box-shadow: 0 5px 20px rgba(13,110,253,0.1);
+        }
+        
+        .question {
+            background: white;
+            border: 1px solid #e9ecef;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 20px;
+            transition: all 0.3s;
+        }
+        
+        .question:hover {
+            border-color: #0d6efd;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.02);
+        }
+        
+        .question h5 {
+            color: #212529;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+        
+        .star {
+            color: #dee2e6;
+            font-size: 32px;
+            cursor: pointer;
+            margin: 0 4px;
+            transition: all 0.2s;
+            display: inline-block;
+        }
+        
+        .star:hover {
+            transform: scale(1.2);
+            color: #ffc107;
+        }
+        
+        .star.active {
+            color: #ffc107;
+            text-shadow: 0 0 15px rgba(255,193,7,0.3);
+        }
+        
+        .rating-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .rating-label {
+            color: #6c757d;
+            font-size: 14px;
+            margin-left: 10px;
+        }
+        
+        .btn-submit {
+            background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
+            border: none;
+            padding: 16px 30px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            border-radius: 50px;
+            transition: all 0.3s;
+            width: 100%;
+            color: white;
+            margin-top: 20px;
+        }
+        
+        .btn-submit:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 30px rgba(13,110,253,0.3);
+        }
+        
+        .btn-submit:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+        
+        .btn-results {
+            background: white;
+            border: 2px solid #0d6efd;
+            color: #0d6efd;
+            padding: 16px 30px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            border-radius: 50px;
+            transition: all 0.3s;
+            width: 100%;
+            margin-top: 15px;
+        }
+        
+        .btn-results:hover {
+            background: #0d6efd;
+            color: white;
+        }
+        
+        .total-votes {
+            background: #e7f1ff;
+            border-radius: 50px;
+            padding: 12px 30px;
+            display: inline-block;
+            margin-top: 20px;
+        }
+        
+        .footer-note {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 16px;
+            color: #6c757d;
+            text-align: center;
+        }
+        
+        .form-select, .form-control {
+            border-radius: 12px;
+            border: 2px solid #e9ecef;
+            padding: 12px 16px;
+            font-size: 16px;
+        }
+        
+        .form-select:focus, .form-control:focus {
+            border-color: #0d6efd;
+            box-shadow: 0 0 0 0.25rem rgba(13,110,253,0.1);
+        }
+        
+        @media (max-width: 768px) {
+            .main-card {
+                padding: 20px;
+            }
+            
+            .star {
+                font-size: 28px;
+            }
+            
+            .welcome-banner {
+                padding: 20px;
+            }
+        }
     </style>
 </head>
 <body>
-    <nav class="navbar navbar-dark bg-primary">
-        <div class="container">
-            <span class="navbar-brand">
-                <i class="fas fa-home"></i> Опрос ЖКХ
-            </span>
-        </div>
-    </nav>
-
-    <div class="container mt-4">
-        <div class="text-center mb-4">
-            <h1 class="text-primary">Опрос качества ЖКХ</h1>
-            <h3 class="text-muted">Заднепровский район, мкр. Королевка</h3>
+    <div class="container">
+        <div class="main-card">
             
-            <div class="alert alert-info d-inline-block mt-3">
-                <i class="fas fa-users"></i> Всего голосов: <span id="totalVotes">0</span>
+            <!-- Шапка -->
+            <div class="text-center mb-4">
+                <div class="header-icon">
+                    <i class="fas fa-home"></i>
+                </div>
+                <h1 class="display-6 fw-bold mb-2">Опрос качества ЖКХ</h1>
+                <h4 class="text-muted">Заднепровский район, мкр. Королевка</h4>
+                
+                <div class="total-votes">
+                    <i class="fas fa-users text-primary me-2"></i>
+                    <span class="fw-bold">Проголосовало:</span>
+                    <span id="totalVotes" class="badge bg-primary ms-2 fs-6">0</span>
+                </div>
             </div>
-        </div>
 
-        <!-- Обращение к жителям -->
-        <div class="card mb-4 bg-light">
-            <div class="card-body">
-                <div class="d-flex">
+            <!-- Обращение к жителям -->
+            <div class="welcome-banner">
+                <div class="d-flex align-items-start">
                     <div class="me-3">
-                        <i class="fas fa-bullhorn text-primary fa-2x"></i>
+                        <i class="fas fa-bullhorn fa-2x"></i>
                     </div>
                     <div>
-                        <h5 class="card-title text-primary">Уважаемые жители микрорайона Королевка!</h5>
-                        <p class="card-text" style="font-size: 1.05rem; line-height: 1.5;">
-                            В целях улучшения качества жилищно-коммунальных услуг, предоставляемых УК "Мой Смоленск", просим Вас ответить на несколько вопросов.
+                        <h4 class="mb-2">Уважаемые жители микрорайона Королевка!</h4>
+                        <p class="mb-0 fs-6 opacity-90">
+                            В целях улучшения качества жилищно-коммунальных услуг, 
+                            предоставляемых УК "Мой Смоленск", просим Вас оценить работу нашей компании.
+                            Ваше мнение очень важно для нас!
                         </p>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <!-- Адрес - выпадающий список -->
-        <div class="card mb-4 address-select">
-            <div class="card-body">
-                <h5 class="card-title"><i class="fas fa-map-marker-alt text-danger"></i> Выберите ваш адрес</h5>
-                <div class="row g-3">
+            <!-- Адрес -->
+            <div class="address-card">
+                <h5 class="mb-3 d-flex align-items-center">
+                    <i class="fas fa-map-marker-alt text-danger me-2"></i>
+                    Выберите ваш адрес
+                </h5>
+                
+                <select class="form-select form-select-lg mb-3" id="addressSelect" required>
+                    <option value="" selected disabled>-- Выберите адрес из списка --</option>
+                    <option value="г. Смоленск, ул. Ударников, д. 36">🏢 г. Смоленск, ул. Ударников, д. 36</option>
+                    <option value="г. Смоленск, ул. Авиаторов, д. 5Б">🏢 г. Смоленск, ул. Авиаторов, д. 5Б</option>
+                    <option value="г. Смоленск, ул. Авиаторов, д. 9">🏢 г. Смоленск, ул. Авиаторов, д. 9</option>
+                    <option value="г. Смоленск, мкр. Королевка, д. 13a">🏢 г. Смоленск, мкр. Королевка, д. 13a</option>
+                    <option value="г. Смоленск, ул. Авиаторов, д. 4">🏢 г. Смоленск, ул. Авиаторов, д. 4</option>
+                    <option value="г. Смоленск, ул. Маршала Еременко, д. 32">🏢 г. Смоленск, ул. Маршала Еременко, д. 32</option>
+                    <option value="г. Смоленск, мкр. Королевка, д. 20">🏢 г. Смоленск, мкр. Королевка, д. 20</option>
+                </select>
+                
+                <div class="row">
                     <div class="col-md-12">
-                        <select class="form-select form-select-lg" id="addressSelect" required>
-                            <option value="" selected disabled>-- Выберите адрес из списка --</option>
-                            <option value="г. Смоленск, ул. Ударников, д. 36">г. Смоленск, ул. Ударников, д. 36</option>
-                            <option value="г. Смоленск, ул. Авиаторов, д. 5Б">г. Смоленск, ул. Авиаторов, д. 5Б</option>
-                            <option value="г. Смоленск, ул. Авиаторов, д. 9">г. Смоленск, ул. Авиаторов, д. 9</option>
-                            <option value="г. Смоленск, мкр. Королевка, д. 13a">г. Смоленск, мкр. Королевка, д. 13a</option>
-                            <option value="г. Смоленск, ул. Авиаторов, д. 4">г. Смоленск, ул. Авиаторов, д. 4</option>
-                            <option value="г. Смоленск, ул. Маршала Еременко, д. 32">г. Смоленск, ул. Маршала Еременко, д. 32</option>
-                            <option value="г. Смоленск, мкр. Королевка, д. 20">г. Смоленск, мкр. Королевка, д. 20</option>
-                        </select>
-                        <div class="form-text mt-2">
-                            <i class="fas fa-info-circle"></i> Если вашего адреса нет в списке, обратитесь в управляющую компанию
-                        </div>
+                        <input type="text" class="form-control" id="entrance" 
+                               placeholder="№ подъезда (необязательно)">
                     </div>
                 </div>
-                <!-- Дополнительное поле для номера подъезда -->
-                <div class="row g-3 mt-2">
-                    <div class="col-md-6">
-                        <input type="text" class="form-control" id="entrance" placeholder="Подъезд (необязательно)">
-                    </div>
+                
+                <div class="form-text mt-2">
+                    <i class="fas fa-info-circle text-info"></i> 
+                    Если вашего адреса нет в списке, обратитесь в УК "Мой Смоленск"
                 </div>
             </div>
-        </div>
 
-        <!-- Вопросы (оценка по 5-звездочной шкале) -->
-        <div id="questionsContainer">
-            <!-- Вопросы будут загружены через app.js -->
-        </div>
+            <!-- Вопросы -->
+            <h5 class="mb-3 d-flex align-items-center">
+                <i class="fas fa-star text-warning me-2"></i>
+                Оцените качество услуг
+            </h5>
+            
+            <div id="questionsContainer">
+                <!-- Вопросы загрузятся через JS -->
+            </div>
 
-        <!-- Кнопки -->
-        <div class="d-grid gap-2 mt-4">
-            <button class="btn btn-primary btn-lg" onclick="submitVote()">
-                <i class="fas fa-paper-plane"></i> Отправить голос
+            <!-- Кнопки -->
+            <button class="btn-submit" onclick="submitVote()" id="submitBtn">
+                <i class="fas fa-paper-plane me-2"></i>
+                Отправить голос
             </button>
-            <a href="results.html" class="btn btn-success btn-lg">
-                <i class="fas fa-chart-bar"></i> Посмотреть результаты
+            
+            <a href="results.html" class="btn-results d-block text-center text-decoration-none">
+                <i class="fas fa-chart-bar me-2"></i>
+                Посмотреть результаты
             </a>
-        </div>
 
-        <div class="alert alert-warning mt-4">
-            <i class="fas fa-info-circle"></i> Все голоса автоматически синхронизируются между всеми участниками.
+            <div class="footer-note">
+                <i class="fas fa-database me-2"></i>
+                Все голоса сохраняются в облачной базе данных и синхронизируются в реальном времени
+            </div>
         </div>
     </div>
 
     <!-- Модальное окно успеха -->
-    <div class="modal fade" id="successModal" tabindex="-1">
-        <div class="modal-dialog">
+    <div class="modal fade" id="successModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header bg-success text-white">
-                    <h5 class="modal-title"><i class="fas fa-check-circle"></i> Спасибо за участие!</h5>
+                    <h5 class="modal-title">
+                        <i class="fas fa-check-circle me-2"></i>
+                        Спасибо за участие!
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
-                <div class="modal-body">
-                    <p>Ваш голос сохранен и отправлен в общую базу!</p>
-                    <p>Все участники увидят обновленные результаты.</p>
+                <div class="modal-body text-center py-4">
+                    <i class="fas fa-check-circle text-success fa-4x mb-3"></i>
+                    <h5>Ваш голос принят!</h5>
+                    <p class="text-muted mb-0">Ваша оценка поможет нам стать лучше</p>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
-                    <a href="results.html" class="btn btn-primary">Посмотреть результаты</a>
+                    <a href="results.html" class="btn btn-primary">
+                        <i class="fas fa-chart-bar me-2"></i>
+                        Смотреть результаты
+                    </a>
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- Модальное окно ошибки -->
+    <div class="modal fade" id="errorModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Ошибка
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body text-center py-4">
+                    <i class="fas fa-times-circle text-danger fa-4x mb-3"></i>
+                    <h5>Не удалось отправить голос</h5>
+                    <p class="text-muted mb-0" id="errorMessage">Попробуйте еще раз позже</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     
-    <!-- Скрипт с вопросами и логикой -->
-    <script>
-        // Массив вопросов
-        const questions = [
-            { id: 1, text: "Уборка внутри подъезда" },
-            { id: 2, text: "Освещение внутри подъезда" },
-            { id: 3, text: "Работа лифта" },
-            { id: 4, text: "Уборка снега с тротуаров и проезжих частей" },
-            { id: 5, text: "Уличное освещение во дворе" },
-            { id: 6, text: "Вывоз мусора" }
-        ];
-
-        // Список адресов для отображения в результатах
-        const addressList = [
-            "г. Смоленск, ул. Ударников, д. 36",
-            "г. Смоленск, ул. Авиаторов, д. 5Б",
-            "г. Смоленск, ул. Авиаторов, д. 9",
-            "г. Смоленск, мкр. Королевка, д. 13a",
-            "г. Смоленск, ул. Авиаторов, д. 4",
-            "г. Смоленск, ул. Маршала Еременко, д. 32",
-            "г. Смоленск, мкр. Королевка, д. 20"
-        ];
-
-        // Хранилище оценок
-        let ratings = {};
-
-        // Загрузка вопросов
-        function loadQuestions() {
-            const container = document.getElementById('questionsContainer');
-            container.innerHTML = '';
-            
-            questions.forEach(q => {
-                ratings[q.id] = 0;
-                
-                const questionDiv = document.createElement('div');
-                questionDiv.className = 'question';
-                questionDiv.innerHTML = `
-                    <h5>${q.text}</h5>
-                    <div class="rating-stars" data-question-id="${q.id}">
-                        ${generateStars(0, q.id)}
-                    </div>
-                `;
-                container.appendChild(questionDiv);
-            });
-            
-            // Добавляем обработчики событий после создания звезд
-            attachStarEvents();
-        }
-
-        // Генерация звезд
-        function generateStars(rating, questionId) {
-            let stars = '';
-            for (let i = 1; i <= 5; i++) {
-                stars += `<span class="star ${i <= rating ? 'active' : ''}" data-value="${i}" data-question="${questionId}">★</span>`;
-            }
-            return stars;
-        }
-
-        // Обработчики кликов на звезды
-        function attachStarEvents() {
-            document.querySelectorAll('.star').forEach(star => {
-                star.addEventListener('click', function(e) {
-                    const value = parseInt(this.dataset.value);
-                    const questionId = parseInt(this.dataset.question);
-                    
-                    // Обновляем оценку в хранилище
-                    ratings[questionId] = value;
-                    
-                    // Обновляем отображение звезд
-                    const starsContainer = this.closest('.rating-stars');
-                    starsContainer.innerHTML = generateStars(value, questionId);
-                    
-                    // Перепривязываем события
-                    attachStarEvents();
-                });
-            });
-        }
-
-        // Отправка голоса
-        function submitVote() {
-            const addressSelect = document.getElementById('addressSelect');
-            const selectedAddress = addressSelect.value;
-            const entrance = document.getElementById('entrance').value;
-            
-            if (!selectedAddress) {
-                alert('Пожалуйста, выберите ваш адрес из списка');
-                addressSelect.focus();
-                return;
-            }
-            
-            // Проверяем, все ли вопросы оценены
-            let allRated = true;
-            questions.forEach(q => {
-                if (ratings[q.id] === 0) allRated = false;
-            });
-            
-            if (!allRated) {
-                alert('Пожалуйста, оцените все услуги');
-                return;
-            }
-            
-            // Собираем данные голоса
-            const voteData = {
-                address: selectedAddress,
-                entrance: entrance || 'не указан',
-                ratings: { ...ratings },
-                timestamp: new Date().toISOString(),
-                id: Date.now() // уникальный идентификатор голоса
-            };
-            
-            // Сохраняем в localStorage
-            saveVoteToStorage(voteData);
-            
-            // Обновляем счетчик голосов
-            updateTotalVotes();
-            
-            // Показываем модальное окно успеха
-            const modal = new bootstrap.Modal(document.getElementById('successModal'));
-            modal.show();
-            
-            // Очищаем форму
-            clearForm();
-        }
-
-        // Сохранение в localStorage
-        function saveVoteToStorage(voteData) {
-            // Получаем существующие голоса
-            let votes = JSON.parse(localStorage.getItem('zhkhVotes')) || [];
-            votes.push(voteData);
-            localStorage.setItem('zhkhVotes', JSON.stringify(votes));
-            
-            // Сохраняем агрегированные результаты
-            saveAggregatedResults(votes);
-            
-            // Сохраняем статистику по адресам
-            saveAddressStats(votes);
-        }
-
-        // Сохранение агрегированных результатов
-        function saveAggregatedResults(votes) {
-            const results = {
-                totalVotes: votes.length,
-                questionStats: {}
-            };
-            
-            questions.forEach(q => {
-                results.questionStats[q.id] = {
-                    text: q.text,
-                    total: 0,
-                    count: 0,
-                    average: 0,
-                    distribution: {1:0, 2:0, 3:0, 4:0, 5:0}
-                };
-            });
-            
-            votes.forEach(vote => {
-                Object.entries(vote.ratings).forEach(([qId, rating]) => {
-                    if (results.questionStats[qId]) {
-                        results.questionStats[qId].total += rating;
-                        results.questionStats[qId].count++;
-                        results.questionStats[qId].distribution[rating] = 
-                            (results.questionStats[qId].distribution[rating] || 0) + 1;
-                    }
-                });
-            });
-            
-            // Рассчитываем средние
-            Object.keys(results.questionStats).forEach(qId => {
-                const stat = results.questionStats[qId];
-                if (stat.count > 0) {
-                    stat.average = stat.total / stat.count;
-                }
-            });
-            
-            localStorage.setItem('zhkhResults', JSON.stringify(results));
-        }
-
-        // Сохранение статистики по адресам
-        function saveAddressStats(votes) {
-            const addressStats = {};
-            
-            // Инициализируем все адреса
-            addressList.forEach(address => {
-                addressStats[address] = {
-                    total: 0,
-                    votes: []
-                };
-            });
-            
-            // Добавляем голоса
-            votes.forEach(vote => {
-                if (addressStats[vote.address]) {
-                    addressStats[vote.address].total++;
-                    addressStats[vote.address].votes.push({
-                        ratings: vote.ratings,
-                        timestamp: vote.timestamp,
-                        entrance: vote.entrance
-                    });
-                }
-            });
-            
-            localStorage.setItem('zhkhAddressStats', JSON.stringify(addressStats));
-        }
-
-        // Обновление счетчика голосов
-        function updateTotalVotes() {
-            const votes = JSON.parse(localStorage.getItem('zhkhVotes')) || [];
-            document.getElementById('totalVotes').textContent = votes.length;
-        }
-
-        // Очистка формы
-        function clearForm() {
-            // Сбрасываем выбор адреса
-            document.getElementById('addressSelect').value = '';
-            document.getElementById('entrance').value = '';
-            
-            // Сбрасываем оценки
-            questions.forEach(q => {
-                ratings[q.id] = 0;
-            });
-            
-            // Перезагружаем звезды
-            loadQuestions();
-        }
-
-        // Проверка наличия сохраненных данных при загрузке
-        function checkExistingData() {
-            // Инициализируем хранилище, если оно пустое
-            if (!localStorage.getItem('zhkhVotes')) {
-                localStorage.setItem('zhkhVotes', JSON.stringify([]));
-            }
-            if (!localStorage.getItem('zhkhResults')) {
-                localStorage.setItem('zhkhResults', JSON.stringify({totalVotes: 0, questionStats: {}}));
-            }
-            if (!localStorage.getItem('zhkhAddressStats')) {
-                const emptyAddressStats = {};
-                addressList.forEach(address => {
-                    emptyAddressStats[address] = { total: 0, votes: [] };
-                });
-                localStorage.setItem('zhkhAddressStats', JSON.stringify(emptyAddressStats));
-            }
-        }
-
-        // Инициализация
-        document.addEventListener('DOMContentLoaded', function() {
-            checkExistingData();
-            loadQuestions();
-            updateTotalVotes();
-        });
-
-        // Делаем функции глобальными для вызова из HTML
-        window.submitVote = submitVote;
-    </script>
+    <script src="firebase-config.js"></script>
+    <script src="app.js"></script>
 </body>
 </html>
