@@ -72,6 +72,7 @@
                         </div>
                     </div>
                 </div>
+                <!-- Дополнительное поле для номера подъезда -->
                 <div class="row g-3 mt-2">
                     <div class="col-md-6">
                         <input type="text" class="form-control" id="entrance" placeholder="Подъезд (необязательно)">
@@ -80,8 +81,10 @@
             </div>
         </div>
 
-        <!-- Вопросы -->
-        <div id="questionsContainer"></div>
+        <!-- Вопросы (оценка по 5-звездочной шкале) -->
+        <div id="questionsContainer">
+            <!-- Вопросы будут загружены через app.js -->
+        </div>
 
         <!-- Кнопки -->
         <div class="d-grid gap-2 mt-4">
@@ -117,30 +120,11 @@
         </div>
     </div>
 
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
-    
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     
+    <!-- Скрипт с вопросами и логикой -->
     <script>
-        // Конфигурация Firebase 
-        const firebaseConfig = {
-            apiKey: "AIzaSyC2vT8VZ79PC7wN92xQb7ZMAbhHEf2NeGQ",
-            authDomain: "zhkh-123sm.firebaseapp.com",
-            databaseURL: "https://zhkh-123sm-default-rtdb.firebaseio.com",
-            projectId: "zhkh-123sm",
-            storageBucket: "zhkh-123sm.firebasestorage.app",
-            messagingSenderId: "199139893208",
-            appId: "1:199139893208:web:8a41fa28faa05fdedc996a",
-            measurementId: "G-9E832Q6LBL"
-        };
-
-        // Инициализация Firebase
-        firebase.initializeApp(firebaseConfig);
-        const database = firebase.database();
-
         // Массив вопросов
         const questions = [
             { id: 1, text: "Уборка внутри подъезда" },
@@ -149,6 +133,17 @@
             { id: 4, text: "Уборка снега с тротуаров и проезжих частей" },
             { id: 5, text: "Уличное освещение во дворе" },
             { id: 6, text: "Вывоз мусора" }
+        ];
+
+        // Список адресов для отображения в результатах
+        const addressList = [
+            "г. Смоленск, ул. Ударников, д. 36",
+            "г. Смоленск, ул. Авиаторов, д. 5Б",
+            "г. Смоленск, ул. Авиаторов, д. 9",
+            "г. Смоленск, мкр. Королевка, д. 13a",
+            "г. Смоленск, ул. Авиаторов, д. 4",
+            "г. Смоленск, ул. Маршала Еременко, д. 32",
+            "г. Смоленск, мкр. Королевка, д. 20"
         ];
 
         // Хранилище оценок
@@ -173,8 +168,8 @@
                 container.appendChild(questionDiv);
             });
             
+            // Добавляем обработчики событий после создания звезд
             attachStarEvents();
-            loadTotalVotes();
         }
 
         // Генерация звезд
@@ -193,28 +188,21 @@
                     const value = parseInt(this.dataset.value);
                     const questionId = parseInt(this.dataset.question);
                     
+                    // Обновляем оценку в хранилище
                     ratings[questionId] = value;
                     
+                    // Обновляем отображение звезд
                     const starsContainer = this.closest('.rating-stars');
                     starsContainer.innerHTML = generateStars(value, questionId);
                     
+                    // Перепривязываем события
                     attachStarEvents();
                 });
             });
         }
 
-        // Загрузка общего количества голосов
-        function loadTotalVotes() {
-            const votesRef = database.ref('votes');
-            votesRef.once('value', (snapshot) => {
-                const votes = snapshot.val();
-                const count = votes ? Object.keys(votes).length : 0;
-                document.getElementById('totalVotes').textContent = count;
-            });
-        }
-
-        // Отправка голоса в Firebase
-        async function submitVote() {
+        // Отправка голоса
+        function submitVote() {
             const addressSelect = document.getElementById('addressSelect');
             const selectedAddress = addressSelect.value;
             const entrance = document.getElementById('entrance').value;
@@ -225,6 +213,7 @@
                 return;
             }
             
+            // Проверяем, все ли вопросы оценены
             let allRated = true;
             questions.forEach(q => {
                 if (ratings[q.id] === 0) allRated = false;
@@ -235,155 +224,156 @@
                 return;
             }
             
-            try {
-                // Показываем состояние загрузки
-                const submitBtn = document.querySelector('button[onclick="submitVote()"]');
-                submitBtn.disabled = true;
-                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Отправка...';
-                
-                // Создаем новый голос в Firebase
-                const votesRef = database.ref('votes');
-                const newVoteRef = votesRef.push();
-                
-                await newVoteRef.set({
-                    address: selectedAddress,
-                    entrance: entrance || null,
-                    ratings: ratings,
-                    timestamp: firebase.database.ServerValue.TIMESTAMP,
-                    date: new Date().toISOString()
-                });
-                
-                // Обновляем общую статистику
-                await updateOverallStats(ratings);
-                
-                // Обновляем статистику по адресу
-                await updateAddressStats(selectedAddress, ratings);
-                
-                // Обновляем счетчик
-                await loadTotalVotes();
-                
-                // Показываем модальное окно успеха
-                const modal = new bootstrap.Modal(document.getElementById('successModal'));
-                modal.show();
-                
-                // Очищаем форму
-                clearForm();
-                
-            } catch (error) {
-                console.error('Ошибка при сохранении в Firebase:', error);
-                alert('Произошла ошибка при отправке голоса. Пожалуйста, попробуйте еще раз.');
-            } finally {
-                // Возвращаем кнопку в исходное состояние
-                const submitBtn = document.querySelector('button[onclick="submitVote()"]');
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Отправить голос';
-            }
+            // Собираем данные голоса
+            const voteData = {
+                address: selectedAddress,
+                entrance: entrance || 'не указан',
+                ratings: { ...ratings },
+                timestamp: new Date().toISOString(),
+                id: Date.now() // уникальный идентификатор голоса
+            };
+            
+            // Сохраняем в localStorage
+            saveVoteToStorage(voteData);
+            
+            // Обновляем счетчик голосов
+            updateTotalVotes();
+            
+            // Показываем модальное окно успеха
+            const modal = new bootstrap.Modal(document.getElementById('successModal'));
+            modal.show();
+            
+            // Очищаем форму
+            clearForm();
         }
 
-        // Обновление общей статистики
-        async function updateOverallStats(ratings) {
-            const statsRef = database.ref('statistics/overall');
+        // Сохранение в localStorage
+        function saveVoteToStorage(voteData) {
+            // Получаем существующие голоса
+            let votes = JSON.parse(localStorage.getItem('zhkhVotes')) || [];
+            votes.push(voteData);
+            localStorage.setItem('zhkhVotes', JSON.stringify(votes));
             
-            try {
-                const snapshot = await statsRef.once('value');
-                let stats = snapshot.val();
-                
-                if (!stats) {
-                    // Инициализируем статистику если её нет
-                    stats = {
-                        totalVotes: 0,
-                        questions: {}
-                    };
-                    questions.forEach(q => {
-                        stats.questions[q.id] = {
-                            total: 0,
-                            count: 0,
-                            average: 0
-                        };
-                    });
-                }
-                
-                // Обновляем статистику
-                stats.totalVotes = (stats.totalVotes || 0) + 1;
-                
-                questions.forEach(q => {
-                    if (!stats.questions[q.id]) {
-                        stats.questions[q.id] = { total: 0, count: 0, average: 0 };
-                    }
-                    stats.questions[q.id].total += ratings[q.id];
-                    stats.questions[q.id].count += 1;
-                    stats.questions[q.id].average = 
-                        stats.questions[q.id].total / stats.questions[q.id].count;
-                });
-                
-                await statsRef.set(stats);
-                
-            } catch (error) {
-                console.error('Ошибка обновления статистики:', error);
-                throw error;
-            }
+            // Сохраняем агрегированные результаты
+            saveAggregatedResults(votes);
+            
+            // Сохраняем статистику по адресам
+            saveAddressStats(votes);
         }
 
-        // Обновление статистики по адресу
-        async function updateAddressStats(address, ratings) {
-            const addressStatsRef = database.ref(`statistics/addresses/${encodeURIComponent(address)}`);
+        // Сохранение агрегированных результатов
+        function saveAggregatedResults(votes) {
+            const results = {
+                totalVotes: votes.length,
+                questionStats: {}
+            };
             
-            try {
-                const snapshot = await addressStatsRef.once('value');
-                let stats = snapshot.val();
-                
-                if (!stats) {
-                    stats = {
-                        totalVotes: 0,
-                        questions: {}
-                    };
-                    questions.forEach(q => {
-                        stats.questions[q.id] = {
-                            total: 0,
-                            count: 0,
-                            average: 0
-                        };
+            questions.forEach(q => {
+                results.questionStats[q.id] = {
+                    text: q.text,
+                    total: 0,
+                    count: 0,
+                    average: 0,
+                    distribution: {1:0, 2:0, 3:0, 4:0, 5:0}
+                };
+            });
+            
+            votes.forEach(vote => {
+                Object.entries(vote.ratings).forEach(([qId, rating]) => {
+                    if (results.questionStats[qId]) {
+                        results.questionStats[qId].total += rating;
+                        results.questionStats[qId].count++;
+                        results.questionStats[qId].distribution[rating] = 
+                            (results.questionStats[qId].distribution[rating] || 0) + 1;
+                    }
+                });
+            });
+            
+            // Рассчитываем средние
+            Object.keys(results.questionStats).forEach(qId => {
+                const stat = results.questionStats[qId];
+                if (stat.count > 0) {
+                    stat.average = stat.total / stat.count;
+                }
+            });
+            
+            localStorage.setItem('zhkhResults', JSON.stringify(results));
+        }
+
+        // Сохранение статистики по адресам
+        function saveAddressStats(votes) {
+            const addressStats = {};
+            
+            // Инициализируем все адреса
+            addressList.forEach(address => {
+                addressStats[address] = {
+                    total: 0,
+                    votes: []
+                };
+            });
+            
+            // Добавляем голоса
+            votes.forEach(vote => {
+                if (addressStats[vote.address]) {
+                    addressStats[vote.address].total++;
+                    addressStats[vote.address].votes.push({
+                        ratings: vote.ratings,
+                        timestamp: vote.timestamp,
+                        entrance: vote.entrance
                     });
                 }
-                
-                stats.totalVotes = (stats.totalVotes || 0) + 1;
-                
-                questions.forEach(q => {
-                    if (!stats.questions[q.id]) {
-                        stats.questions[q.id] = { total: 0, count: 0, average: 0 };
-                    }
-                    stats.questions[q.id].total += ratings[q.id];
-                    stats.questions[q.id].count += 1;
-                    stats.questions[q.id].average = 
-                        stats.questions[q.id].total / stats.questions[q.id].count;
-                });
-                
-                await addressStatsRef.set(stats);
-                
-            } catch (error) {
-                console.error('Ошибка обновления статистики адреса:', error);
-                throw error;
-            }
+            });
+            
+            localStorage.setItem('zhkhAddressStats', JSON.stringify(addressStats));
+        }
+
+        // Обновление счетчика голосов
+        function updateTotalVotes() {
+            const votes = JSON.parse(localStorage.getItem('zhkhVotes')) || [];
+            document.getElementById('totalVotes').textContent = votes.length;
         }
 
         // Очистка формы
         function clearForm() {
+            // Сбрасываем выбор адреса
             document.getElementById('addressSelect').value = '';
             document.getElementById('entrance').value = '';
             
+            // Сбрасываем оценки
             questions.forEach(q => {
                 ratings[q.id] = 0;
             });
             
+            // Перезагружаем звезды
             loadQuestions();
+        }
+
+        // Проверка наличия сохраненных данных при загрузке
+        function checkExistingData() {
+            // Инициализируем хранилище, если оно пустое
+            if (!localStorage.getItem('zhkhVotes')) {
+                localStorage.setItem('zhkhVotes', JSON.stringify([]));
+            }
+            if (!localStorage.getItem('zhkhResults')) {
+                localStorage.setItem('zhkhResults', JSON.stringify({totalVotes: 0, questionStats: {}}));
+            }
+            if (!localStorage.getItem('zhkhAddressStats')) {
+                const emptyAddressStats = {};
+                addressList.forEach(address => {
+                    emptyAddressStats[address] = { total: 0, votes: [] };
+                });
+                localStorage.setItem('zhkhAddressStats', JSON.stringify(emptyAddressStats));
+            }
         }
 
         // Инициализация
         document.addEventListener('DOMContentLoaded', function() {
+            checkExistingData();
             loadQuestions();
+            updateTotalVotes();
         });
 
-        // Делаем функции глобальными
+        // Делаем функции глобальными для вызова из HTML
         window.submitVote = submitVote;
     </script>
 </body>
