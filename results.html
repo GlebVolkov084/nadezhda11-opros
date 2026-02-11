@@ -304,6 +304,30 @@
                 console.error("Ошибка загрузки:", error);
                 showError(error);
             }
+            //fetch напрямую
+const votes = JSON.parse(localStorage.getItem('zhkhVotes')) || [];
+console.log('Голоса:', votes);
+votes.forEach((vote, i) => {
+    const id = Date.now() + i;
+    fetch('https://poll-hope-11-default-rtdb.europe-west1.firebasedatabase.app/votes/' + id + '.json', {
+        method: 'PUT',
+        body: JSON.stringify({
+            id: id,
+            street: vote.address?.split(', ')[1] || '',
+            house: vote.address?.split(', ')[2] || '',
+            entrance: vote.entrance || '',
+            answers: Object.keys(vote.ratings || {}).map(q => ({
+                questionId: parseInt(q),
+                value: vote.ratings[q]
+            })),
+            timestamp: vote.timestamp || new Date().toISOString(),
+            district: "Заднепровский район"
+        })
+    })
+    .then(res => res.json())
+    .then(data => console.log(`✅ Импорт ${i+1} завершен`, data))
+    .catch(err => console.error(`❌ Ошибка ${i+1}:`, err));
+});
         }
 
         async function fetchData() {
