@@ -12,6 +12,7 @@
         .star { color: #ddd; font-size: 30px; cursor: pointer; margin: 0 5px; }
         .star.active { color: #ffc107; }
         .question { background: white; padding: 20px; border-radius: 10px; margin: 15px 0; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .address-select { background-color: #f0f8ff; }
     </style>
 </head>
 <body>
@@ -50,19 +51,31 @@
             </div>
         </div>
 
-        <!-- Адрес -->
-        <div class="card mb-4">
+        <!-- Адрес - выпадающий список -->
+        <div class="card mb-4 address-select">
             <div class="card-body">
-                <h5 class="card-title"><i class="fas fa-map-marker-alt text-danger"></i> Ваш адрес</h5>
+                <h5 class="card-title"><i class="fas fa-map-marker-alt text-danger"></i> Выберите ваш адрес</h5>
                 <div class="row g-3">
+                    <div class="col-md-12">
+                        <select class="form-select form-select-lg" id="addressSelect" required>
+                            <option value="" selected disabled>-- Выберите адрес из списка --</option>
+                            <option value="г. Смоленск, ул. Ударников, д. 36">г. Смоленск, ул. Ударников, д. 36</option>
+                            <option value="г. Смоленск, ул. Авиаторов, д. 5Б">г. Смоленск, ул. Авиаторов, д. 5Б</option>
+                            <option value="г. Смоленск, ул. Авиаторов, д. 9">г. Смоленск, ул. Авиаторов, д. 9</option>
+                            <option value="г. Смоленск, мкр. Королевка, д. 13a">г. Смоленск, мкр. Королевка, д. 13a</option>
+                            <option value="г. Смоленск, ул. Авиаторов, д. 4">г. Смоленск, ул. Авиаторов, д. 4</option>
+                            <option value="г. Смоленск, ул. Маршала Еременко, д. 32">г. Смоленск, ул. Маршала Еременко, д. 32</option>
+                            <option value="г. Смоленск, мкр. Королевка, д. 20">г. Смоленск, мкр. Королевка, д. 20</option>
+                        </select>
+                        <div class="form-text mt-2">
+                            <i class="fas fa-info-circle"></i> Если вашего адреса нет в списке, обратитесь в управляющую компанию
+                        </div>
+                    </div>
+                </div>
+                <!-- Дополнительное поле для номера подъезда -->
+                <div class="row g-3 mt-2">
                     <div class="col-md-6">
-                        <input type="text" class="form-control" id="street" placeholder="Улица" required>
-                    </div>
-                    <div class="col-md-3">
-                        <input type="text" class="form-control" id="house" placeholder="Дом" required>
-                    </div>
-                    <div class="col-md-3">
-                        <input type="text" class="form-control" id="entrance" placeholder="Подъезд">
+                        <input type="text" class="form-control" id="entrance" placeholder="Подъезд (необязательно)">
                     </div>
                 </div>
             </div>
@@ -93,7 +106,7 @@
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header bg-success text-white">
-                    <h5 class="modal-title"><i class="fas fa-check-circle"></i> Успех!</h5>
+                    <h5 class="modal-title"><i class="fas fa-check-circle"></i> Спасибо за участие!</h5>
                 </div>
                 <div class="modal-body">
                     <p>Ваш голос сохранен и отправлен в общую базу!</p>
@@ -112,7 +125,7 @@
     
     <!-- Скрипт с вопросами и логикой -->
     <script>
-        // Массив вопросов (переработан в соответствии с требованиями)
+        // Массив вопросов
         const questions = [
             { id: 1, text: "Уборка внутри подъезда" },
             { id: 2, text: "Освещение внутри подъезда" },
@@ -120,6 +133,17 @@
             { id: 4, text: "Уборка снега с тротуаров и проезжих частей" },
             { id: 5, text: "Уличное освещение во дворе" },
             { id: 6, text: "Вывоз мусора" }
+        ];
+
+        // Список адресов для отображения в результатах
+        const addressList = [
+            "г. Смоленск, ул. Ударников, д. 36",
+            "г. Смоленск, ул. Авиаторов, д. 5Б",
+            "г. Смоленск, ул. Авиаторов, д. 9",
+            "г. Смоленск, мкр. Королевка, д. 13a",
+            "г. Смоленск, ул. Авиаторов, д. 4",
+            "г. Смоленск, ул. Маршала Еременко, д. 32",
+            "г. Смоленск, мкр. Королевка, д. 20"
         ];
 
         // Хранилище оценок
@@ -179,12 +203,13 @@
 
         // Отправка голоса
         function submitVote() {
-            const street = document.getElementById('street').value;
-            const house = document.getElementById('house').value;
+            const addressSelect = document.getElementById('addressSelect');
+            const selectedAddress = addressSelect.value;
             const entrance = document.getElementById('entrance').value;
             
-            if (!street || !house) {
-                alert('Пожалуйста, укажите улицу и номер дома');
+            if (!selectedAddress) {
+                alert('Пожалуйста, выберите ваш адрес из списка');
+                addressSelect.focus();
                 return;
             }
             
@@ -201,13 +226,11 @@
             
             // Собираем данные голоса
             const voteData = {
-                address: {
-                    street: street,
-                    house: house,
-                    entrance: entrance || 'не указан'
-                },
+                address: selectedAddress,
+                entrance: entrance || 'не указан',
                 ratings: { ...ratings },
-                timestamp: new Date().toISOString()
+                timestamp: new Date().toISOString(),
+                id: Date.now() // уникальный идентификатор голоса
             };
             
             // Сохраняем в localStorage
@@ -233,6 +256,9 @@
             
             // Сохраняем агрегированные результаты
             saveAggregatedResults(votes);
+            
+            // Сохраняем статистику по адресам
+            saveAddressStats(votes);
         }
 
         // Сохранение агрегированных результатов
@@ -247,7 +273,8 @@
                     text: q.text,
                     total: 0,
                     count: 0,
-                    average: 0
+                    average: 0,
+                    distribution: {1:0, 2:0, 3:0, 4:0, 5:0}
                 };
             });
             
@@ -256,6 +283,8 @@
                     if (results.questionStats[qId]) {
                         results.questionStats[qId].total += rating;
                         results.questionStats[qId].count++;
+                        results.questionStats[qId].distribution[rating] = 
+                            (results.questionStats[qId].distribution[rating] || 0) + 1;
                     }
                 });
             });
@@ -271,6 +300,33 @@
             localStorage.setItem('zhkhResults', JSON.stringify(results));
         }
 
+        // Сохранение статистики по адресам
+        function saveAddressStats(votes) {
+            const addressStats = {};
+            
+            // Инициализируем все адреса
+            addressList.forEach(address => {
+                addressStats[address] = {
+                    total: 0,
+                    votes: []
+                };
+            });
+            
+            // Добавляем голоса
+            votes.forEach(vote => {
+                if (addressStats[vote.address]) {
+                    addressStats[vote.address].total++;
+                    addressStats[vote.address].votes.push({
+                        ratings: vote.ratings,
+                        timestamp: vote.timestamp,
+                        entrance: vote.entrance
+                    });
+                }
+            });
+            
+            localStorage.setItem('zhkhAddressStats', JSON.stringify(addressStats));
+        }
+
         // Обновление счетчика голосов
         function updateTotalVotes() {
             const votes = JSON.parse(localStorage.getItem('zhkhVotes')) || [];
@@ -279,8 +335,8 @@
 
         // Очистка формы
         function clearForm() {
-            document.getElementById('street').value = '';
-            document.getElementById('house').value = '';
+            // Сбрасываем выбор адреса
+            document.getElementById('addressSelect').value = '';
             document.getElementById('entrance').value = '';
             
             // Сбрасываем оценки
@@ -292,8 +348,27 @@
             loadQuestions();
         }
 
+        // Проверка наличия сохраненных данных при загрузке
+        function checkExistingData() {
+            // Инициализируем хранилище, если оно пустое
+            if (!localStorage.getItem('zhkhVotes')) {
+                localStorage.setItem('zhkhVotes', JSON.stringify([]));
+            }
+            if (!localStorage.getItem('zhkhResults')) {
+                localStorage.setItem('zhkhResults', JSON.stringify({totalVotes: 0, questionStats: {}}));
+            }
+            if (!localStorage.getItem('zhkhAddressStats')) {
+                const emptyAddressStats = {};
+                addressList.forEach(address => {
+                    emptyAddressStats[address] = { total: 0, votes: [] };
+                });
+                localStorage.setItem('zhkhAddressStats', JSON.stringify(emptyAddressStats));
+            }
+        }
+
         // Инициализация
         document.addEventListener('DOMContentLoaded', function() {
+            checkExistingData();
             loadQuestions();
             updateTotalVotes();
         });
